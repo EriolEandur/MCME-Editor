@@ -16,11 +16,15 @@
  */
 package com.mcmiddleearth.mcme.editor.listener;
 
+import com.mcmiddleearth.architect.serverResoucePack.RpManager;
+import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
+import com.mcmiddleearth.architect.specialBlockHandling.data.SpecialBlockInventoryData;
 import com.mcmiddleearth.mcme.editor.Permissions;
 import com.mcmiddleearth.mcme.editor.command.BlockCommand;
 import com.mcmiddleearth.mcme.editor.command.sender.EditPlayer;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -45,29 +49,45 @@ public class BlockSelectionListener implements Listener {
                         || player.getBlockSelectionMode().equals(EditPlayer.BlockSelectionMode.COUNT)
                             && player.hasPermissions(Permissions.BLOCK_COUNT)) {
                     event.setCancelled(true);
+                    String rpName = RpManager.getCurrentRpName(player.getPlayer());
+                    BlockData blockData = event.getClickedBlock().getBlockData();
+                    if(rpName==null || rpName.equals("")) {
+                        player.error("Your current RP could not be determined. Selection of custom blocks might be erroneous.");
+                    } else {
+                        ItemBlockData itemBlockData = ItemBlockData.createItemBlockData(event.getClickedBlock(), rpName);
+                        if(itemBlockData!=null) {
+                            blockData = itemBlockData;
+                        }
+                    }
                     switch(player.getBlockSelectionMode()) {
                         case COUNT:
-                            player.addCount(event.getClickedBlock().getBlockData());
+                            player.addCount(blockData);
                             BlockCommand.sendSelectedBlocksMessage(player);
                             break;
                         case REPLACE:
                             if(player.getIncompleteBlockSelection()==null) {
-                                player.setIncompleteBlockSelection(event.getClickedBlock().getBlockData());
+                                player.setIncompleteBlockSelection(blockData);
                                 player.info("Block data to be replaced saved, next click at a block to place instead.");
                             } else {
-                                player.addReplace(player.getIncompleteBlockSelection(),
-                                            event.getClickedBlock().getBlockData());
+                                if((blockData instanceof ItemBlockData) && !player.hasPermissions(Permissions.BLOCK_PLACE_ITEMBLOCK)) {
+                                    sendNoItemBlockPermission(player);
+                                    break;
+                                }
+                                player.addReplace(player.getIncompleteBlockSelection(), blockData);
                                 player.setIncompleteBlockSelection(null);
                                 BlockCommand.sendSelectedBlocksMessage(player);//"Block data selected for replacing (hover for more info).");
                             }
                             break;
                         case SWITCH:
+                            if((blockData instanceof ItemBlockData) && !player.hasPermissions(Permissions.BLOCK_PLACE_ITEMBLOCK)) {
+                                sendNoItemBlockPermission(player);
+                                break;
+                            }
                             if(player.getIncompleteBlockSelection()==null) {
-                                player.setIncompleteBlockSelection(event.getClickedBlock().getBlockData());
+                                player.setIncompleteBlockSelection(blockData);
                                 player.info("Block data to be switched saved, next click at a block to switch with.");
                             } else {
-                                player.addSwitch(player.getIncompleteBlockSelection(),
-                                            event.getClickedBlock().getBlockData());
+                                player.addSwitch(player.getIncompleteBlockSelection(),blockData);
                                 player.setIncompleteBlockSelection(null);
                                 BlockCommand.sendSelectedBlocksMessage(player);
                             }
@@ -76,5 +96,9 @@ public class BlockSelectionListener implements Listener {
                 }
             }
         }
+    }
+
+    private void sendNoItemBlockPermission(EditPlayer player) {
+        player.error("You don't have permission to place item blocks in MCME-Editor jobs.");
     }
 }

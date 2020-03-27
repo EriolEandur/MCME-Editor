@@ -16,7 +16,6 @@
  */
 package com.mcmiddleearth.mcme.editor.util;
 
-import com.sk89q.worldedit.Vector2D;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;

@@ -18,7 +18,7 @@ package com.mcmiddleearth.mcme.editor.job;
 
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
-import org.bukkit.ChunkSnapshot;
+import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
@@ -37,7 +37,7 @@ public class ClipboardPasteJob extends ClipboardJob{
     }
 
     @Override
-    public ChunkEditData handle(ChunkSnapshot chunk) {
+    public ChunkEditData handle(EditChunkSnapshot chunk) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

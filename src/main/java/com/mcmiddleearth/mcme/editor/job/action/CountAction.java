@@ -16,6 +16,7 @@
  */
 package com.mcmiddleearth.mcme.editor.job.action;
 
+import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
@@ -59,6 +60,13 @@ public class CountAction implements ConfigurationSerializable {
     }
     
     public static CountAction deserialize(Map<String,Object> map) {
-        return new CountAction((int)map.get("id"),Bukkit.createBlockData((String)map.get("search")));
+        String dataString = (String)map.get("search");
+        BlockData data;
+        if(dataString.startsWith(ItemBlockData.NAMESPACE)) {
+            data = ItemBlockData.createItemBlockData(dataString);
+        } else {
+            data = Bukkit.createBlockData(dataString);
+        }
+        return new CountAction((int)map.get("id"),data);
     }
 }

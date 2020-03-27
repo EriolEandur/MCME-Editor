@@ -16,6 +16,7 @@
  */
 package com.mcmiddleearth.mcme.editor.command.sender;
 
+import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
 import com.mcmiddleearth.mcme.editor.EditorPlugin;
 import com.mcmiddleearth.mcme.editor.Permissions;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.logging.Level;
@@ -163,26 +165,36 @@ public abstract class EditCommandSender {
                 if(line.startsWith("-")) {
                     break;
                 }
-                BlockData data = Bukkit.createBlockData(line);
-                counts.add(data);
+                if(line.startsWith("minecraft:")) {
+                    BlockData data = Bukkit.createBlockData(line);
+                    counts.add(data);
+                }
             }
             while(reader.hasNext()) {
                 String line = reader.nextLine();
                 if(line.startsWith("-")) {
                     break;
                 }
-                BlockData data1 = Bukkit.createBlockData(line);
-                BlockData data2 = Bukkit.createBlockData(reader.nextLine().substring(2));
-                replaces.put(data1,data2);
+                if(line.startsWith("minecraft:")) {
+                    BlockData data1 = Bukkit.createBlockData(line);
+                    BlockData data2 = Bukkit.createBlockData(reader.nextLine().substring(2));
+                    replaces.put(data1,data2);
+                } else if(line.startsWith("mcme:")) {
+                    BlockData data1 = ItemBlockData.createItemBlockData(line);
+                    BlockData data2 = Bukkit.createBlockData(reader.nextLine().substring(2));
+                    replaces.put(data1,data2);
+                }
             }
             while(reader.hasNext()) {
                 String line = reader.nextLine();
                 if(line.startsWith("-")) {
                     break;
                 }
-                BlockData data1 = Bukkit.createBlockData(line);
-                BlockData data2 = Bukkit.createBlockData(reader.nextLine().substring(2));
-                switches.put(data1,data2);
+                if(line.startsWith("minecraft:")) {
+                    BlockData data1 = Bukkit.createBlockData(line);
+                    BlockData data2 = Bukkit.createBlockData(reader.nextLine().substring(2));
+                    switches.put(data1,data2);
+                }
             }
             
         } catch (FileNotFoundException ex) {
@@ -203,6 +215,27 @@ public abstract class EditCommandSender {
         } catch (IOException ex) {
             Logger.getLogger(EditPlayer.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+ 
+    public boolean hasItemBlocksSelected(BlockSelectionMode... modes) {
+        for(BlockSelectionMode mode: modes) {
+            switch(mode) {
+                case REPLACE:
+                    if(checkForItemBlocks(replaces)) return true;
+                    break;
+                case COUNT:
+                    if(counts.stream().anyMatch((entry) -> (entry instanceof ItemBlockData))) return true;
+                    break;
+                case SWITCH:
+                    if(checkForItemBlocks(switches)) return true;
+                    break;
+            }
+        }
+        return false;
+    }
+    
+    private boolean checkForItemBlocks(Map<BlockData,BlockData> selections) {
+        return selections.entrySet().stream().anyMatch((entry) -> (entry.getKey() instanceof ItemBlockData || entry.getValue() instanceof ItemBlockData));
     }
     
     public static enum BlockSelectionMode {

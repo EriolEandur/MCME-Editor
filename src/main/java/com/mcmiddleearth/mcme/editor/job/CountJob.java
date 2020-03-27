@@ -30,65 +30,27 @@ import org.bukkit.configuration.file.YamlConfiguration;
  */
 public class CountJob extends BlockSearchJob {
     
-    //Integer: blockDataId
-    //private Set<BlockData,Integer> counts = new HashMap<>();
-    
     public CountJob(EditCommandSender owner, int id, YamlConfiguration config) {
         super(owner, id, config);
         //actions.putAll(config.getObject("counts", HashMap.class));
         loadResultsFromFile();
         
-        //counts = config.getObject("count", counts.getClass());
-        //counts = config.getObject("count", counts.getClass());
-        //owner.getCounts().forEach(blockData -> results.put(blockData, 0));
     }
     
     public CountJob(EditCommandSender owner, int id, World world, Region extraRegion, Set<Region> regions, 
                     boolean exactMatch, int size) {
-        super(owner, id, world, extraRegion, regions, exactMatch, size);
+        super(owner, id, world, extraRegion, regions, exactMatch, size, owner.hasItemBlocksSelected(EditCommandSender.BlockSelectionMode.COUNT));
         int actionId = 0;
         for(BlockData blockData: owner.getCounts()) {
             actions.put(blockData,new CountAction(actionId,blockData));
             actionId++;
         }
         saveActionsToFile();
-        /*try {
-            getConfig().set("actions", actions);
-            getConfig().save(getJobDataFile());
-        } catch (IOException ex) {
-            fail(ex);
-        }*/
     }
 
     @Override
     public JobType getType() {
         return JobType.COUNT;
     }
-
-    /*@Override
-    protected void saveResultsToFile() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public String getResults() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }*/
-
-    /*@Override
-    protected void writeBlockDataToFile(ConfigurationSection config) {
-        config.set("count", counts);
-    }
-
-    @Override
-    public void initJobData(EditCommandSender owner) {
-        int blockId = 0;
-        for(BlockData data: owner.getCounts()) {
-            counts.put(data, blockId);
-            results.put(data, new Integer[]{blockId,0});
-            blockId++;
-        }
-    }*/
-
 
 }

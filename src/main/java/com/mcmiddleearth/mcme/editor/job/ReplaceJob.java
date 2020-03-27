@@ -17,6 +17,7 @@
 package com.mcmiddleearth.mcme.editor.job;
 
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
+import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender.BlockSelectionMode;
 import com.mcmiddleearth.mcme.editor.job.action.ReplaceAction;
 import com.sk89q.worldedit.regions.Region;
 import java.util.Map.Entry;
@@ -31,24 +32,16 @@ import org.bukkit.configuration.file.YamlConfiguration;
  */
 public class ReplaceJob extends BlockSearchJob {
     
-    //private Map<BlockData,BlockData> replaces = new HashMap<>();
-    //private Map<BlockData,BlockData> switches = new HashMap<>();
-   
-    //private Map<BlockData,Integer> blockIds = new HashMap<>();
-    
     public ReplaceJob(EditCommandSender owner, int id, YamlConfiguration config) {
         super(owner, id, config);
         //actions.putAll(config.getObject("replaces", HashMap.class));
         loadResultsFromFile();
         
-        //blockIds = config.getObject("blockId", blockIds.getClass());
-        //replaces = config.getObject("replace", replaces.getClass());
-        //replaces = config.getObject("switch", switches.getClass());
     }
     
     public ReplaceJob(EditCommandSender owner, int id, World world, Region extraRegion, Set<Region> regions, 
                       boolean exactMatch, int size) {
-        super(owner, id, world, extraRegion, regions, exactMatch, size);
+        super(owner, id, world, extraRegion, regions, exactMatch, size, owner.hasItemBlocksSelected(BlockSelectionMode.REPLACE,BlockSelectionMode.SWITCH));
         int actionId = 0;
         for(Entry<BlockData,BlockData> entry: owner.getReplaces().entrySet()) {
             actions.put(entry.getKey(),new ReplaceAction(actionId,entry.getKey(),entry.getValue()));
@@ -61,51 +54,11 @@ public class ReplaceJob extends BlockSearchJob {
             actionId++;
         }
         saveActionsToFile();
-        /*try {
-            getConfig().set("replaces", actions);
-            getConfig().save(getJobDataFile());
-        } catch (IOException ex) {
-            fail(ex);
-        }*/
     }
 
     @Override
     public JobType getType() {
         return JobType.REPLACE;
     }
-
-    /*@Override
-    protected void saveResultsToFile() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public String getResults() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }*/
-
-    /*@Override
-    protected void writeBlockDataToFile(ConfigurationSection config) {
-        config.set("replace", replaces);
-        config.set("switch", switches);
-        config.set("blockId", blockIds);
-    }
-
-    @Override
-    public void initJobData(EditCommandSender owner) {
-        replaces.putAll(owner.getReplaces());
-        switches.putAll(owner.getSwitches());
-        int blockId = 0;
-        for(BlockData data: replaces.keySet()) {
-            blockIds.put(data, blockId);
-            results.put(data, new Integer[]{blockId,0});
-            blockId++;
-        }
-        for(BlockData data: switches.keySet()) {
-            blockIds.put(data, blockId);
-            results.put(data, new Integer[]{blockId,0});
-            blockId++;
-        }
-    }*/
 
 }

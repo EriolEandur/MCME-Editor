@@ -16,6 +16,7 @@
  */
 package com.mcmiddleearth.mcme.editor.job.action;
 
+import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,20 +42,22 @@ public class ReplaceAction extends CountAction {
         super(id, search);
         replaceData = replace.clone();
         List<String> temp = new ArrayList<>();
-        String[] all = replaceData.getAsString(false).split("[\\[\\],]");
-        String[] specified = replaceData.getAsString(true).split("[\\[\\],]");
-        boolean found;
-        for(String attrib: all) {
-            found = false;
-            for(String searchAttrib: specified) {
-                if(searchAttrib.equals(attrib)) {
-                    found = true;
-                    break;
+        if(!(replace instanceof ItemBlockData)) {
+            String[] all = replaceData.getAsString(false).split("[\\[\\],]");
+            String[] specified = replaceData.getAsString(true).split("[\\[\\],]");
+            boolean found;
+            for(String attrib: all) {
+                found = false;
+                for(String searchAttrib: specified) {
+                    if(searchAttrib.equals(attrib)) {
+                        found = true;
+                        break;
+                    }
                 }
-            }
-            if(!found) {
-                temp.add(attrib.substring(0,attrib.indexOf("=")));
-//Logger.getGlobal().info("flex: "+temp.get(temp.size()-1));
+                if(!found) {
+                    temp.add(attrib.substring(0,attrib.indexOf("=")));
+    //Logger.getGlobal().info("flex: "+temp.get(temp.size()-1));
+                }
             }
         }
         flexAttributes = temp.toArray(new String[temp.size()]);
@@ -109,15 +112,18 @@ public class ReplaceAction extends CountAction {
     }
     
     public static ReplaceAction deserialize(Map<String,Object> map) {
+        String search = (String)map.get("search");
         String replace = (String)map.get("replace");
-        /*if(replace.contains("?")) {
-            return new FlexReplaceAction((int)map.get("id"),
-                                     Bukkit.createBlockData((String)map.get("search")),
-                                     replace);
-        } else {*/
-            return new ReplaceAction((int)map.get("id"),
-                                     Bukkit.createBlockData((String)map.get("search")),
-                                     Bukkit.createBlockData(replace));
-        //}
+        BlockData searchData = createBlockData(search);
+        BlockData replaceData = createBlockData(replace);
+        return new ReplaceAction((int)map.get("id"),searchData,replaceData);
+    }
+    
+    private static BlockData createBlockData(String data) {
+        if(data.startsWith(ItemBlockData.NAMESPACE)) {
+            return ItemBlockData.createItemBlockData(data);
+        } else {
+            return Bukkit.createBlockData(data);
+        }
     }
 }

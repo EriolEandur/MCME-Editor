@@ -33,8 +33,8 @@ public abstract class ClipboardJob extends AbstractJob{
         super(owner, id, config);
     }
     
-    public ClipboardJob(EditPlayer owner, int id, World world, int size) {
-        super(owner, id, world, owner.getClipboard().getWeRegion(), new HashSet<Region>(), size);
+    public ClipboardJob(EditPlayer owner, int id, World world, int size, boolean includeItemBlocks) {
+        super(owner, id, world, owner.getClipboard().getWeRegion(), new HashSet<Region>(), size, includeItemBlocks);
     }
 
 }

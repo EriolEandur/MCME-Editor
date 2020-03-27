@@ -16,6 +16,8 @@
  */
 package com.mcmiddleearth.mcme.editor.data;
 
+import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
+import com.mcmiddleearth.architect.specialBlockHandling.specialBlocks.SpecialBlockItemBlock;
 import com.mcmiddleearth.mcme.editor.EditorPlugin;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,9 +25,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import lombok.Getter;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -44,6 +50,8 @@ public class ChunkEditData {
     @Getter
     private Map<Vector,BlockData> changes = new HashMap<>();
     
+    private Map<Vector,ItemBlockData> removals = new HashMap<>();
+    
     public ChunkEditData(int chunkX, int chunkZ) {
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
@@ -54,6 +62,16 @@ public class ChunkEditData {
                 && vector.getBlockY()>=0 && vector.getBlockY()<256
                 && vector.getBlockZ()>=0 && vector.getBlockZ()<16) {
             changes.put(vector, data);
+            return true;
+        }
+        return false;
+    }
+    
+    public boolean addRemoval(Vector vector, ItemBlockData data) {
+        if(vector.getBlockX()>=0 && vector.getBlockX()<16
+                && vector.getBlockY()>=0 && vector.getBlockY()<256
+                && vector.getBlockZ()>=0 && vector.getBlockZ()<16) {
+            removals.put(vector, data);
             return true;
         }
         return false;
@@ -75,6 +93,15 @@ public class ChunkEditData {
             Logger.getLogger(EditorPlugin.class.getName()).log(Level.INFO,"Working at: "+chunkX+" "+chunkZ
                     +" ChunkTickets: "+world.getPluginChunkTickets().get(EditorPlugin.getInstance()).size());
         }
+        removals.forEach((vector,data) -> {
+            ArmorStand armorStand = SpecialBlockItemBlock.getArmorStand(new Location(chunk.getWorld(),
+                                                                            chunkX*16+vector.getBlockX(),
+                                                                            vector.getBlockY(),
+                                                                            chunkZ*16+vector.getBlockZ()));
+            if(armorStand!=null) {
+                armorStand.remove();
+            }
+        });
         changes.forEach((vector,data) -> {
             chunk.getBlock(vector.getBlockX(),
                            vector.getBlockY(),
@@ -113,11 +140,19 @@ Logger.getGlobal().info("Force load: "+chunkX + " "+chunkZ);
     public void applyEditsUnchecked(Chunk chunk) {
         changes.forEach((vector, data) -> {
     //Logger.getGlobal().info("change: "+vector+" "+data+" "+world);
-            chunk.getBlock(vector.getBlockX(),
-                           vector.getBlockY(),
-                           vector.getBlockZ())
-                    .setBlockData(data, false);
-            //No entity tile found error here.
+            Block block = chunk.getBlock(vector.getBlockX(),
+                               vector.getBlockY(),
+                               vector.getBlockZ());
+            if(data instanceof ItemBlockData) {
+                ItemBlockData itemBlockData = (ItemBlockData) data;
+                block.setBlockData(itemBlockData.getBlockData());
+                itemBlockData.getSpecialItemBlock().placeArmorStand(block, BlockFace.DOWN, 
+                                                     new Location(null,0,0,0,itemBlockData.getYaw()+180,0),
+                                                     itemBlockData.getCurrentDamage());
+            } else {
+                block.setBlockData(data, false);
+                //No entity tile found error here.
+            }
         });
     }
 }

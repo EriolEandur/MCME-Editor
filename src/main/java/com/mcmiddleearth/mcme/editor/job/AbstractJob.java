@@ -22,6 +22,7 @@ import com.mcmiddleearth.mcme.editor.command.sender.EditConsoleSender;
 import com.mcmiddleearth.mcme.editor.command.sender.EditPlayer;
 import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
 import com.mcmiddleearth.mcme.editor.data.ChunkPosition;
+import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
 import com.mcmiddleearth.mcme.editor.queue.ReadingQueue;
 import com.mcmiddleearth.mcme.editor.queue.WritingQueue;
@@ -106,6 +107,9 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
     private long lastMessaged;
     
     @Getter
+    private boolean includeItemBlocks = false;
+    
+    @Getter
     private YamlConfiguration config;
     
     @Getter
@@ -155,6 +159,7 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
         status = JobStatus.CREATION;
         statusRequested = status;
         this.config = config;
+        includeItemBlocks = config.getBoolean("includeItemBlocks",false);
         startTime = config.getLong("start");
         endTime = config.getLong("end");
         this.owner = owner;
@@ -180,10 +185,11 @@ Logger.getGlobal().info("job status: "+id+" "+statusRequested);
         loadRegionsFromFile();
     }
     
-    public AbstractJob(EditCommandSender owner, int id, World world, Region extraRegion, Set<Region> regions, int size) {
+    public AbstractJob(EditCommandSender owner, int id, World world, Region extraRegion, Set<Region> regions, int size, boolean includeItemBlocks) {
         status = JobStatus.CREATION;
         statusRequested = status;
         startTime = System.currentTimeMillis();
+        this.includeItemBlocks = includeItemBlocks;
         this.owner = owner;
         this.id = id;
         this.world = world;
@@ -200,6 +206,7 @@ Logger.getGlobal().info("job status: "+id+" "+statusRequested);
             } else {
                 config.set("owner", "console");
             }
+            config.set("includeItemBlocks",includeItemBlocks);
             config.set("start",startTime);
             config.set("end", endTime);
             config.set("world", world.getName());
@@ -360,7 +367,7 @@ Logger.getGlobal().info("read size: "+size);
         Logger.getLogger(AbstractJob.class.getName()).log(Level.SEVERE, null, ex);
     }
 
-    public abstract ChunkEditData handle(ChunkSnapshot chunk);
+    public abstract ChunkEditData handle(EditChunkSnapshot chunk);
     
     public void work() {
         while(readingQueue.hasChunk()) {
@@ -419,7 +426,7 @@ Logger.getGlobal().info("read size: "+size);
 //Logger.getGlobal().info("serveing Chunk request: ");
         ChunkPosition chunk = readingQueue.nextRequest();
         world.addPluginChunkTicket(chunk.getX(),chunk.getZ(), EditorPlugin.getInstance());
-        readingQueue.putChunk(world.getChunkAt(chunk.getX(),chunk.getZ()).getChunkSnapshot(true,true,true));
+        readingQueue.putChunk(new EditChunkSnapshot(world.getChunkAt(chunk.getX(),chunk.getZ()),includeItemBlocks));
     }
     
     public String progresMessage() {

@@ -17,6 +17,7 @@
 package com.mcmiddleearth.mcme.editor.queue;
 
 import com.mcmiddleearth.mcme.editor.data.ChunkPosition;
+import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -36,7 +37,7 @@ public class ReadingQueue {
     
     private LinkedBlockingQueue<ChunkPosition> request = new LinkedBlockingQueue<>(TASK_SIZE);
     
-    private LinkedBlockingQueue<ChunkSnapshot> chunks = new LinkedBlockingQueue<>(TASK_SIZE);
+    private LinkedBlockingQueue<EditChunkSnapshot> chunks = new LinkedBlockingQueue<>(TASK_SIZE);
     
     public ReadingQueue(World world) {
         this.world = world;
@@ -47,7 +48,7 @@ public class ReadingQueue {
         return chunks.remainingCapacity();
     }
     
-    public void putChunk(ChunkSnapshot snapshot) {
+    public void putChunk(EditChunkSnapshot snapshot) {
         try {
             request.remove();
             chunks.put(snapshot);
@@ -60,7 +61,7 @@ public class ReadingQueue {
         return !chunks.isEmpty();
     }
     
-    public ChunkSnapshot pollChunk() {
+    public EditChunkSnapshot pollChunk() {
         try {
             return chunks.take();
         } catch (InterruptedException ex) {

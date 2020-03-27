@@ -37,6 +37,7 @@ public enum Permissions {
     BLOCK_QUEUE_OTHER   ("mcmeeditor.command.block.queue.other",      PermissionDefault.OP, BLOCK_QUEUE),
     BLOCK_COUNT         ("mcmeeditor.command.block.count",      PermissionDefault.OP, BLOCK),
     BLOCK_REPLACE       ("mcmeeditor.command.block.replace",    PermissionDefault.OP, BLOCK),
+    BLOCK_PLACE_ITEMBLOCK ("mcmeeditor.command.block.place.itemblock",    PermissionDefault.OP, BLOCK),
     CLIPBOARD_LIMIT     ("mcmeeditor.clipboard.limit",          PermissionDefault.OP),
     CLIPBOARD_UNLIMITED ("mcmeeditor.clipboard.unlimited",      PermissionDefault.OP),
     CLIPBOARD_COPY      ("mcmeeditor.command.copy",             PermissionDefault.OP),

@@ -18,6 +18,7 @@ package com.mcmiddleearth.mcme.editor.job;
 
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
+import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import com.sk89q.worldedit.regions.Region;
 import java.util.Set;
 import org.bukkit.Bukkit;
@@ -41,12 +42,13 @@ public class SurvivalPrepJob extends BlockSearchJob {
 
     public SurvivalPrepJob(EditCommandSender owner, int id, World world, Region extraRegion, Set<Region> regions, 
                       boolean exactMatch, int size) {
-        super(owner, id, world, extraRegion, regions, exactMatch, size);
+        super(owner, id, world, extraRegion, regions, exactMatch, size, false);
         saveActionsToFile();
     }
     
     @Override
-    public ChunkEditData handle(ChunkSnapshot chunk) {
+    public ChunkEditData handle(EditChunkSnapshot editChunk) {
+        ChunkSnapshot chunk = editChunk.getChunkSnapshot();
         boolean complete= false;
         //int maxY = getWorld().getMaxHeight();
 //Logger.getGlobal().info("handle chunk: "+chunk);
