@@ -22,10 +22,13 @@ import com.mcmiddleearth.mcme.editor.clipboard.UndoData;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -64,6 +67,10 @@ public class EditPlayer extends EditCommandSender{
         return Bukkit.getPlayer(uuid);
     }
     
+    public OfflinePlayer getOfflinePlayer() {
+        return Bukkit.getOfflinePlayer(uuid);
+    }
+    
     public boolean hasClipboard() {
         return clipboard != null;
     }
@@ -97,4 +104,28 @@ public class EditPlayer extends EditCommandSender{
         }
     }
     
+    /*@Override
+    public ChatColor infoColor() {
+        return EditorPlugin.getMessageUtil().INFO;
+    }
+    
+    @Override
+    public ChatColor stressedColor() {
+        return EditorPlugin.getMessageUtil().STRESSED;
+    }*/
+    
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof EditPlayer 
+                && uuid.equals(((EditPlayer)other).getUuid());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 43 * hash + Objects.hashCode(this.uuid);
+        return hash;
+    }
+
+
 }

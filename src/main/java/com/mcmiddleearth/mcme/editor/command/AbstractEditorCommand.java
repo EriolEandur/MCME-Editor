@@ -126,6 +126,9 @@ public abstract class AbstractEditorCommand {
     }
     
     protected SuggestionsBuilder addJobOptionSuggestions(SuggestionsBuilder builder) {
+        /*if(builder.getRemaining().toLowerCase().startsWith("-p:")) {
+            Architect
+        }*/
         builder.suggest("-we", new LiteralMessage("Limits the job to your WE selection."))
                .suggest("-m:worldname", new LiteralMessage("Limits the job to the given world."))
                .suggest("-p:rpname", new LiteralMessage("Limits the job to areas using the given rp."));

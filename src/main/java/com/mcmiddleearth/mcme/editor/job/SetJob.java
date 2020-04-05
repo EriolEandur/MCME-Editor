@@ -21,7 +21,7 @@ import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
 import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import com.sk89q.worldedit.regions.Region;
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.World;
@@ -42,7 +42,7 @@ public class SetJob extends AbstractJob{
         setData = Bukkit.createBlockData(config.getString("setData"));
     }
     
-    public SetJob(EditCommandSender owner, int id, World world, Region region, Set<Region> regions, 
+    public SetJob(EditCommandSender owner, int id, World world, Region region, List<Region> regions, 
                       BlockData data, int size, boolean includeItemBlocks) {
         super(owner, id, world, region, regions, size, includeItemBlocks);
         setData = data;
@@ -89,6 +89,10 @@ public class SetJob extends AbstractJob{
     
     @Override
     public void saveResultsToFile() {
+    }
+    
+    @Override
+    public void saveLogsToFile() {
     }
 
 }

@@ -18,17 +18,20 @@ package com.mcmiddleearth.mcme.editor.command;
 
 import com.mcmiddleearth.mcme.editor.EditorPlugin;
 import com.mcmiddleearth.mcme.editor.Permissions;
+import com.mcmiddleearth.mcme.editor.command.argument.StringArgument;
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.command.sender.EditPlayer;
 import com.mcmiddleearth.mcme.editor.job.AbstractJob;
 import com.mcmiddleearth.mcme.editor.job.JobManager;
 import com.mcmiddleearth.mcme.editor.job.JobStatus;
+import com.mcmiddleearth.mcme.editor.queue.QueueConfiguration;
+import com.mcmiddleearth.mcme.editor.util.Profiler;
+import com.mcmiddleearth.mcme.editor.util.ProgressMessenger;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.mojang.brigadier.arguments.StringArgumentType.word;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -46,54 +49,87 @@ import java.util.Set;
 public class QueueCommand extends AbstractEditorCommand {
 
     @Override
-    public LiteralArgumentBuilder getCommandTree() {
-        return literal("queue")
-            .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.BLOCK_QUEUE))
+    public LiteralArgumentBuilder<EditCommandSender> getCommandTree() {
+        return LiteralArgumentBuilder.<EditCommandSender>literal("queue")
+            .requires(s -> s.hasPermissions(Permissions.BLOCK_QUEUE))
             .executes(c -> {
-                ((EditCommandSender)c.getSource()).info("See manual at...");
+                (c.getSource()).info("See manual at...");
                 return 0;})
-            .then(literal("list")
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("list")
                 .executes(c -> {return displayJobs(c,1,"");})
-                .then(argument("<page>", integer())
+                .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<page>", integer())
                     .executes(c -> {
                         int page = c.getArgument("<page>", Integer.class);
                         return displayJobs(c,page,"");})
-                    .then(argument("<job states>", word())
+                    .then(RequiredArgumentBuilder.<EditCommandSender,String>argument("<job states>", word())
                         .executes(c -> {
                             String states = c.getArgument("<job states>",String.class);
                             int page = c.getArgument("<page>", Integer.class);
                             return displayJobs(c,page,states);})))
-                .then(argument("<job states>", word())
+                .then(RequiredArgumentBuilder.<EditCommandSender,String>argument("<job states>", word())
                     .executes(c -> {
                         String states = c.getArgument("<job states>",String.class);
                         return displayJobs(c,1,states);})))
-            .then(literal("suspend")
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("restart")
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_RESTART))
+                .executes(c -> {
+                    return restartQueue(c.getSource());
+                }))
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("config")
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_CONFIG))
+                .then(LiteralArgumentBuilder.<EditCommandSender>literal("show")
+                    .executes(c -> {
+                        return showConfiguration(c.getSource());
+                    }))
+                .then(RequiredArgumentBuilder.<EditCommandSender,String>argument("key",new StringArgument(QueueConfiguration.Key.getKeys()))
+                    .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("value", integer())
+                        .executes(c -> {
+                            return setConfiguration(c.getSource(), c.getArgument("key", String.class),c.getArgument("value",Integer.class));
+                    }))))
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("debug")
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_CONFIG))
+                .then(RequiredArgumentBuilder.<EditCommandSender,String>argument("enabled",new StringArgument("on","off"))
+                    .executes(c -> {
+                        return setProfiler(c.getSource(),c.getArgument("enabled", String.class),"");
+                    })
+                    .then(RequiredArgumentBuilder.<EditCommandSender,String>argument("component", word())
+                        .executes(c -> {
+                            setProfiler(c.getSource(),c.getArgument("enabled", String.class),c.getArgument("component",String.class));
+                            return 0;
+                        }))))
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("updates")
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_CONFIG))
+                .then(RequiredArgumentBuilder.<EditCommandSender,String>argument("enabled",new StringArgument("on","off"))
+                    .executes(c -> {
+                        return setUpdates(c.getSource(),c.getArgument("enabled", String.class));
+                    })))
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("suspend")
                 .executes(c -> {return suspendJob(c,false);})
-                .then(argument("<jobID>", integer())
+                .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<jobID>", integer())
                     .executes(c -> {return suspendJob(c,false);}))
-                .then(literal("-a")
-                    .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
+                .then(LiteralArgumentBuilder.<EditCommandSender>literal("-a")
+                    .requires(s -> s.hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
                     .executes(c -> {return suspendJob(c,true);})))
-            .then(literal("resume")
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("resume")
                 .executes(c -> {return resumeJob(c,false);})
-                .then(argument("<jobID>", integer())
+                .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<jobID>", integer())
                     .executes(c -> {return resumeJob(c,false);}))
-                .then(literal("-a")
+                .then(LiteralArgumentBuilder.<EditCommandSender>literal("-a")
                     .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
                     .executes(c -> {return resumeJob(c,true);})))
-            .then(literal("cancel")
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("cancel")
                 .executes(c -> {return cancelJob(c,false);})
-                .then(argument("<jobID>", integer())
+                .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<jobID>", integer())
                     .executes(c -> {return cancelJob(c,false);}))
-                .then(literal("-a")
+                .then(LiteralArgumentBuilder.<EditCommandSender>literal("-a")
                     .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
                     .executes(c -> {return cancelJob(c,true);
                 })))
-            .then(literal("delete")
-                .executes(c -> {return cancelJob(c,false);})
-                .then(argument("<jobID>", integer())
-                    .executes(c -> {return cancelJob(c,false);}))
-                .then(literal("-a")
+            .then(LiteralArgumentBuilder.<EditCommandSender>literal("delete")
+                .executes(c -> {return deleteJob(c,false);})
+                .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<jobID>", integer())
+                    .executes(c -> {return deleteJob(c,false);}))
+                .then(LiteralArgumentBuilder.<EditCommandSender>literal("-a")
                     .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
                     .executes(c -> {return deleteJob(c,true);
                 })));
@@ -103,17 +139,18 @@ public class QueueCommand extends AbstractEditorCommand {
         Iterator<AbstractJob> jobs = JobManager.getJobs();
         List<String[]> jobStrings = new ArrayList<>();
         Set<JobStatus> selectedStates = getSelectedStates(states);
+        EditCommandSender sender = (EditCommandSender) c.getSource();
         while(jobs.hasNext()) {
             AbstractJob job = jobs.next();
             if(!selectedStates.contains(job.getStatus())) {
                 continue;
             }
-            if(((EditCommandSender)c.getSource()).hasPermissions(Permissions.BLOCK_QUEUE_OTHER)
-                    || job.isOwner(((EditCommandSender)c.getSource()))) {
+            if(sender.hasPermissions(Permissions.BLOCK_QUEUE_OTHER)
+                    || job.isOwner(sender)) {
                 String ownerName = (job.getOwner() instanceof EditPlayer?
-                                        ((EditPlayer)job.getOwner()).getPlayer().getName():
+                                        ((EditPlayer)job.getOwner()).getOfflinePlayer().getName():
                                         "CONSOLE");
-                jobStrings.add(new String[]{"ID: "+job.getId()+" ("+job.getStatus()+") "+job.progresMessage(),
+                jobStrings.add(new String[]{"ID: "+job.getId()+" ("+job.getStatus()+")\n"+ProgressMessenger.formatProgressMessage(job.progresMessage()),
                                             "Owner: "+ownerName+"\n"
                                             +"Started: "+LocalDateTime.ofEpochSecond(job.getStartTime()/1000,0, ZoneOffset.UTC)+"\n"
                                             +"Ended: "+(job.getEndTime()>0?
@@ -297,4 +334,60 @@ public class QueueCommand extends AbstractEditorCommand {
             return -1;
         }
     }
+    
+    private int setConfiguration(EditCommandSender c, String key, int value) {
+        QueueConfiguration.Key queueKey = QueueConfiguration.Key.valueOf(key);
+        if(queueKey.getMinValue() <= value && value <= queueKey.getMaxValue()) {
+            QueueConfiguration.set(queueKey,value);
+            c.info("Set queue config key "+key+" = "+value);
+        } else {
+            c.error("Invalid value. Range for key "+key+" is ["+queueKey.getMinValue()+" ; "+queueKey.getMaxValue()+"].");
+        }
+        return 0;
+    }
+    
+    private int showConfiguration(EditCommandSender c) {
+        c.info("Queue configuration:");
+        for(QueueConfiguration.Key key: QueueConfiguration.Key.values()) {
+            c.info("- "+key+" = "+ QueueConfiguration.get(key));
+        }
+        return 0;
+    }
+
+    private int restartQueue(EditCommandSender source) {
+        source.info("Restarting Editor Queue, this will take about 10 seconds...");
+        JobManager.restartJobScheduler(source);
+        /*new BukkitRunnable() {
+            @Override
+            public void run() {
+                JobManager.startJobScheduler();
+                source.info("Editor Queue started.");
+            }
+        }.runTaskLater(EditorPlugin.getInstance(),200);*/
+        return 0;
+    }
+    
+    private int setUpdates(EditCommandSender source, String arg) {
+        Iterator<AbstractJob> iterator = JobManager.getJobs();
+        boolean enable = arg.equalsIgnoreCase("on");
+        while(iterator.hasNext()) {
+            AbstractJob job = iterator.next();
+            if(job.getOwner().equals(source)) {
+                job.setSendUpdates(enable);
+            }
+        }
+        return 0;
+    }
+    
+    private int setProfiler(EditCommandSender source, String enabled, String component) {
+        if(component.equals("")) {
+            Profiler.setEnabled(enabled.equalsIgnoreCase("on"));
+            source.info("Profiling "+(Profiler.isEnabled()?"enabled.":"disabled."));
+        } else {
+            Profiler.enableComponent(component, enabled.equalsIgnoreCase("on"));
+            source.info("Profiling of component '"+component+"' "+(enabled.equalsIgnoreCase("on")?"enabled.":"disabled."));
+        }
+        return 0;
+    }
+            
 }

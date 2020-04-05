@@ -17,6 +17,7 @@
 package com.mcmiddleearth.mcme.editor.command.sender;
 
 import com.mcmiddleearth.mcme.editor.Permissions;
+import java.util.Objects;
 import lombok.Getter;
 import org.bukkit.command.ConsoleCommandSender;
 
@@ -42,4 +43,18 @@ public class EditConsoleSender extends EditCommandSender{
     public boolean hasPermissions(Permissions... permissions) {
         return true;
     }
+    
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof EditConsoleSender;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 53 * hash + Objects.hashCode(this.sender);
+        return hash;
+    }
+
+
 }

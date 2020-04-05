@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.bukkit.ChunkSnapshot;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.World;
 
 /**
@@ -31,16 +32,18 @@ import org.bukkit.World;
  */
 public class ReadingQueue {
     
-    private static final int TASK_SIZE = 20;
+    @Getter
+    @Setter
+    private static int taskSize = 20;
 
     private World world;
     
-    private LinkedBlockingQueue<ChunkPosition> request = new LinkedBlockingQueue<>(TASK_SIZE);
+    private LinkedBlockingQueue<ChunkPosition> request = new LinkedBlockingQueue<>(taskSize);
     
-    private LinkedBlockingQueue<EditChunkSnapshot> chunks = new LinkedBlockingQueue<>(TASK_SIZE);
+    private LinkedBlockingQueue<EditChunkSnapshot> chunks = new LinkedBlockingQueue<>(taskSize);
     
     public ReadingQueue(World world) {
-        this.world = world;
+        this.world = world; 
         //this.request = request;
     }
     

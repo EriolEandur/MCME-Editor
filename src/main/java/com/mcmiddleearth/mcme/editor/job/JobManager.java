@@ -26,20 +26,21 @@ import com.mcmiddleearth.mcme.editor.data.ChunkPosition;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
 import com.mcmiddleearth.mcme.editor.tasks.AsyncJobScheduler;
 import com.mcmiddleearth.mcme.editor.tasks.SyncJobScheduler;
+import com.mcmiddleearth.mcme.editor.util.ProgressMessenger;
 import com.mcmiddleearth.pluginutil.WEUtil;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Manages
@@ -47,8 +48,8 @@ import org.bukkit.scheduler.BukkitTask;
  */
 public class JobManager {
     
-    private static BukkitTask asyncScheduler;
-    private static BukkitTask syncScheduler;
+    private static AsyncJobScheduler asyncScheduler;
+    private static SyncJobScheduler syncScheduler;
     
     private static PriorityQueue<AbstractJob> jobQueue = new PriorityQueue<>();
     
@@ -57,10 +58,10 @@ public class JobManager {
     public static boolean enqueueClipboardJob(EditPlayer owner, JobType type) {
         return false;
     }
+
     
-    public static boolean enqueueBlockJob(EditCommandSender owner, boolean weSelection, Set<String> worlds, 
+    public static synchronized boolean enqueueBlockJob(EditCommandSender owner, boolean weSelection, Set<String> worlds, 
                                           Set<String> rps, JobType type, boolean exactMatch) {
-Logger.getGlobal().info("Enqueue 1!");
         boolean jobStarted = false;
         Region weRegion;
         if(weSelection && owner instanceof EditPlayer && owner.isOnline()) {
@@ -75,10 +76,8 @@ Logger.getGlobal().info("Enqueue 1!");
         } else {
             weRegion = null;
         }
-Logger.getGlobal().info("Enqueue 2!");
         Set<World> validWorlds = new HashSet<>();
         if(worlds.isEmpty()) {
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager: addallworlds");
             validWorlds.addAll(Bukkit.getWorlds());
         } else {
             worlds.forEach(world -> {
@@ -86,11 +85,8 @@ Logger.getGlobal().info("Enqueue 2!");
                     validWorlds.add(Bukkit.getWorld(world));
                 }});
         }
-Logger.getGlobal().info("Enqueue 3!");
         Set<RpRegion> rpRegions = new HashSet<>();
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - rps: "+rps.size());
         rps.forEach(rpName -> {
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - rpname: "+rpName);
             RpManager.getRegions().entrySet().stream()
                     .filter(entry -> {
 //Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - filter: "+entry.getKey()
@@ -103,35 +99,33 @@ Logger.getGlobal().info("Enqueue 3!");
                     .forEach(entry -> rpRegions.add(entry.getValue()));
             });
         
-Logger.getGlobal().info("Enqueue 4!");
         final Set<BlockVector2> weSelectionChunks = (weRegion!=null && worlds.contains(weRegion.getWorld().getName())?
                                                  weRegion.getChunks():new HashSet<>());
+        ProgressMessenger chunkProgress = new ProgressMessenger(owner.getSender(),2,"Collecting chunks: %1");
         for(World world : validWorlds) {
             final Set<ChunkPosition> chunks = new HashSet<>();
-            Set<Region> rpWeRegions = new HashSet<>();
+            List<Region> rpWeRegions = new ArrayList<>();
             Region extraWeRegion = null;
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - world: "+world.getName());
             if(!rpRegions.isEmpty()) {
                 rpRegions.stream().filter(rpRegion -> rpRegion.getRegion().getWorld().getName()
                                                               .equalsIgnoreCase(world.getName()))
                                   .forEach(rpRegion -> {
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - rpgegions: "+rpRegion.getName());
-                    rpWeRegions.add(rpRegion.getRegion());
+                    Region reg = rpRegion.getRegion();
+                    rpWeRegions.add(reg);
                     if(weRegion!=null) {
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - add weRegionChunks");
+                        EditorPlugin.getMessageUtil().scheduleInfoMessage(owner.getSender(), "Adding chunks of region: "+rpRegion.getName());
                         rpRegion.getRegion().getChunks().stream()
                                             .filter(chunk -> weSelectionChunks.contains(chunk))
-                                            .forEach(chunk -> chunks.add(new ChunkPosition(chunk.getBlockX(),
-                                                                                           chunk.getBlockZ())));
+                                            .forEach(chunk -> {
+                                                chunks.add(new ChunkPosition(chunk.getBlockX(),
+                                                                                           chunk.getBlockZ()));
+                                                chunkProgress.step();
+                                            });
                     } else {
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - add rpRegionChunks ");
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,""+rpRegion.getRegion().getMaximumPoint().getBlockX()+" "+rpRegion.getRegion().getMaximumPoint().getBlockY()+" "+rpRegion.getRegion().getMaximumPoint().getBlockZ());
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,""+rpRegion.getRegion().getMinimumPoint().getBlockX()+" "+rpRegion.getRegion().getMinimumPoint().getBlockY()+" "+rpRegion.getRegion().getMinimumPoint().getBlockZ());
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - rpRegionWorld"+rpRegion.getRegion().getWorld().getName()+" "+rpRegion.getRegion().getChunks().size());
-                        //getChunks(rpRegion.getRegion()).forEach(chunk -> { 
+                        EditorPlugin.getMessageUtil().scheduleInfoMessage(owner.getSender(), "Adding chunks of region: "+rpRegion.getName());
                         rpRegion.getRegion().getChunks().forEach(chunk -> {  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//Logger.getLogger(JobManager.class.getName()).log(Level.INFO,"JobManager - add "+chunk.getBlockX());
                             chunks.add(new ChunkPosition(chunk.getBlockX(),chunk.getBlockZ()));
+                            chunkProgress.step();
                         });
                     }
                 });
@@ -139,26 +133,17 @@ Logger.getGlobal().info("Enqueue 4!");
                 //getChunks(weRegion).forEach(chunk -> {
                 weRegion.getChunks().forEach(chunk -> { //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                    chunks.add(new ChunkPosition(chunk.getBlockX(),chunk.getBlockZ()));
+                   chunkProgress.step();
                 });
                 extraWeRegion = weRegion;
             } else if(weRegion==null) {
                 //TODO add all world chunks (stream to file)
             }
-//Logger.getGlobal().info("chunks: "+chunks.isEmpty());
-Logger.getGlobal().info("Enqueue 5!");
             if(!chunks.isEmpty()) {
-//Logger.getGlobal().info("start job in  world: "+world.getName());
-//Logger.getGlobal().info("size: "+chunks.size());
-
-                if(!AbstractJob.saveChunksToFile(nextId, chunks)) {
+                if(!AbstractJob.saveChunksToFile(nextId, chunks,owner.getSender())) {
                     return false;
                 }
-
-                /*if(!BlockJob.createChunkFile(owner, nextId, weSelection, worlds, rps)) {
-                    return false;
-                }*/
                 AbstractJob job = null;
-
                 switch(type) {
                     case COUNT:
                         job = new CountJob(owner, nextId, world, extraWeRegion, rpWeRegions, 
@@ -170,21 +155,20 @@ Logger.getGlobal().info("Enqueue 5!");
                         job = new SurvivalPrepJob(owner, nextId, world, extraWeRegion, rpWeRegions, 
                                              exactMatch,chunks.size()); break;
                 }
-Logger.getGlobal().info("Enqueue 6!");
                 nextId++;
                 jobQueue.add(job);
                 job.start();
                 jobStarted = true;
-Logger.getGlobal().info("Enqueue 7!");
             }
         }
         return jobStarted;
     }
     
-    public static void loadJobs() {
+    public static synchronized void loadJobs() {
         File[] files = PluginData.getJobFolder().listFiles(file -> file.getName()
                                                           .endsWith(AbstractJob.jobDataFileExt));
         for(File file: files) {
+//Logger.getGlobal().info("File: "+file.getName());
             AbstractJob job = AbstractJob.loadJob(file);
             if(job!=null) {
                 nextId = Math.max(nextId, job.getId()+1);
@@ -194,7 +178,7 @@ Logger.getGlobal().info("Enqueue 7!");
         }
     }
     
-    public static void dequeueJob(int id) {
+    public static synchronized void dequeueJob(int id) {
         AbstractJob job = getJob(id);
         if(job != null && AbstractJob.getDequeueableStates().contains(job.getStatus())) {
             job.cleanup();
@@ -202,15 +186,17 @@ Logger.getGlobal().info("Enqueue 7!");
         }
     }
     
-    public static Iterator<AbstractJob> getJobs() {
-        return jobQueue.iterator();
+    public static synchronized Iterator<AbstractJob> getJobs() {
+        List<AbstractJob> list = new ArrayList<>();
+        list.addAll(jobQueue);
+        return list.iterator();//Arrays.asList(jobQueue.toArray(new AbstractJob[0])).iterator();
     }
 
-    public static AbstractJob getJob(int jobId) {
+    public static synchronized AbstractJob getJob(int jobId) {
             return jobQueue.stream().filter(job -> job.getId()==jobId).findAny().orElse(null);
     }
 
-    public static void suspendAllJobs(EditCommandSender sender, boolean all) {
+    public static synchronized void suspendAllJobs(EditCommandSender sender, boolean all) {
         jobQueue.forEach(job -> job.suspend());
     }
 
@@ -218,7 +204,7 @@ Logger.getGlobal().info("Enqueue 7!");
         getJob(jobId).suspend();
     }
 
-    public static void resumeAllJobs(EditCommandSender sender, boolean all) {
+    public static synchronized void resumeAllJobs(EditCommandSender sender, boolean all) {
         jobQueue.forEach(job -> job.resume());
     }
 
@@ -226,7 +212,7 @@ Logger.getGlobal().info("Enqueue 7!");
         getJob(jobId).resume();
     }
 
-    public static void cancelAllJobs(EditCommandSender sender, boolean all) {
+    public static synchronized void cancelAllJobs(EditCommandSender sender, boolean all) {
         jobQueue.forEach(job -> job.cancel());
     }
 
@@ -234,7 +220,7 @@ Logger.getGlobal().info("Enqueue 7!");
         getJob(jobId).cancel();
     }
   
-    public static void dequeueAllJobs(EditCommandSender sender, boolean all) {
+    public static synchronized void dequeueAllJobs(EditCommandSender sender, boolean all) {
         jobQueue.forEach(job -> {
             dequeueJob(job.getId());
         });
@@ -250,18 +236,48 @@ Logger.getGlobal().info("Enqueue 7!");
     
     public static boolean startJobScheduler() {
         if((syncScheduler==null && asyncScheduler==null)
-                || syncScheduler.isCancelled() && asyncScheduler.isCancelled()) {
-            syncScheduler = new SyncJobScheduler().runTaskTimer(EditorPlugin.getInstance(), 10, 1);
-            asyncScheduler = new AsyncJobScheduler().runTaskLaterAsynchronously(EditorPlugin.getInstance(),5);
+                || syncScheduler.isCancelled() && asyncScheduler.isEnded()) {
+            syncScheduler = new SyncJobScheduler();//.runTaskTimer(EditorPlugin.getInstance(), 10, 1);
+            asyncScheduler = new AsyncJobScheduler();//.runTaskLaterAsynchronously(EditorPlugin.getInstance(),5);
             return true;
         } else {
             return false;
         }
     }
     
-    public static void stopJobScheduler() {
+    public static synchronized void stopJobScheduler() {
         syncScheduler.cancel();
         asyncScheduler.cancel();
+        jobQueue.forEach((job) -> {
+            job.releaseChunkTickets();
+        });
+    }
+    
+    public static void restartJobScheduler(EditCommandSender sender) {
+        suspendAllJobs(sender, true);
+        new BukkitRunnable() {
+            boolean stopped = false;
+            @Override
+            public void run() {
+                if(!stopped) {
+                    sender.info("Stopping Editor Queue...");
+                    stopJobScheduler();
+                    stopped = true;
+                } else {
+                    if(asyncScheduler.isEnded()) {
+                        synchronized(this) {
+                            jobQueue.clear();
+                        }
+                        loadJobs();
+                        startJobScheduler();
+                        cancel();
+                        sender.info("Editor Queue restart complete.");
+                    } else {
+                        sender.info("Waiting for the Editor Queue to finish shutdown..."+asyncScheduler.isRunning()+" "+asyncScheduler.isQueued());
+                    }
+                }
+            }
+        }.runTaskTimer(EditorPlugin.getInstance(), 100, 100);
     }
     
     //replacement for broken method from WorldEdit Polygonal2DRegion in FAWE 1.14.151

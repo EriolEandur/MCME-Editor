@@ -19,7 +19,6 @@ package com.mcmiddleearth.mcme.editor;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.permissions.Permission;
@@ -38,6 +37,8 @@ public enum Permissions {
     BLOCK_COUNT         ("mcmeeditor.command.block.count",      PermissionDefault.OP, BLOCK),
     BLOCK_REPLACE       ("mcmeeditor.command.block.replace",    PermissionDefault.OP, BLOCK),
     BLOCK_PLACE_ITEMBLOCK ("mcmeeditor.command.block.place.itemblock",    PermissionDefault.OP, BLOCK),
+    QUEUE_RESTART       ("mcmeeditor.queue.restart",            PermissionDefault.OP),
+    QUEUE_CONFIG        ("mcmeeditor.queue.config",             PermissionDefault.OP, QUEUE_RESTART),
     CLIPBOARD_LIMIT     ("mcmeeditor.clipboard.limit",          PermissionDefault.OP),
     CLIPBOARD_UNLIMITED ("mcmeeditor.clipboard.unlimited",      PermissionDefault.OP),
     CLIPBOARD_COPY      ("mcmeeditor.command.copy",             PermissionDefault.OP),

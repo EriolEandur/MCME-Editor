@@ -17,13 +17,16 @@
 package com.mcmiddleearth.mcme.editor.job.action;
 
 import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.util.Vector;
 
 /**
  *
@@ -31,8 +34,12 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
  */
 public class CountAction implements ConfigurationSerializable {
     
+    private static final int MAX_LOG = 1000;
     @Getter
     private final BlockData searchData;
+    
+    @Getter
+    private final List<Vector> locations = new ArrayList<>();
     
     @Getter
     @Setter
@@ -46,7 +53,10 @@ public class CountAction implements ConfigurationSerializable {
         this.searchData = search.clone();
     }
     
-    public BlockData apply(BlockData found) {
+    public BlockData apply(BlockData found, Vector loc) {
+        if(applicationCount < MAX_LOG) {
+            locations.add(loc);
+        }
         applicationCount++;
         return null;
     }

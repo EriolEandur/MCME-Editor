@@ -241,4 +241,13 @@ public abstract class EditCommandSender {
     public static enum BlockSelectionMode {
         REPLACE, COUNT, SWITCH;
     }
+    
+    /*public ChatColor infoColor() {
+        return ChatColor.WHITE;
+    }
+    
+    public ChatColor stressedColor() {
+        return ChatColor.WHITE;
+    }*/
+    
 }

@@ -20,8 +20,8 @@ import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender.BlockSelectionMode;
 import com.mcmiddleearth.mcme.editor.job.action.ReplaceAction;
 import com.sk89q.worldedit.regions.Region;
+import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -35,11 +35,11 @@ public class ReplaceJob extends BlockSearchJob {
     public ReplaceJob(EditCommandSender owner, int id, YamlConfiguration config) {
         super(owner, id, config);
         //actions.putAll(config.getObject("replaces", HashMap.class));
-        loadResultsFromFile();
+        //loadResultsFromFile();
         
     }
     
-    public ReplaceJob(EditCommandSender owner, int id, World world, Region extraRegion, Set<Region> regions, 
+    public ReplaceJob(EditCommandSender owner, int id, World world, Region extraRegion, List<Region> regions, 
                       boolean exactMatch, int size) {
         super(owner, id, world, extraRegion, regions, exactMatch, size, owner.hasItemBlocksSelected(BlockSelectionMode.REPLACE,BlockSelectionMode.SWITCH));
         int actionId = 0;

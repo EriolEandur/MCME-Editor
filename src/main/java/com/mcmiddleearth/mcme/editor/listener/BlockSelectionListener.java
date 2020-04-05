@@ -18,16 +18,17 @@ package com.mcmiddleearth.mcme.editor.listener;
 
 import com.mcmiddleearth.architect.serverResoucePack.RpManager;
 import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
-import com.mcmiddleearth.architect.specialBlockHandling.data.SpecialBlockInventoryData;
 import com.mcmiddleearth.mcme.editor.Permissions;
 import com.mcmiddleearth.mcme.editor.command.BlockCommand;
 import com.mcmiddleearth.mcme.editor.command.sender.EditPlayer;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
+import java.util.logging.Logger;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -101,4 +102,9 @@ public class BlockSelectionListener implements Listener {
     private void sendNoItemBlockPermission(EditPlayer player) {
         player.error("You don't have permission to place item blocks in MCME-Editor jobs.");
     }
+    
+    /*@EventHandler
+    public void onBlockPhysics(BlockPhysicsEvent event) {
+        Logger.getGlobal().info("Physics: "+event.getSourceBlock().getType().toString()+" "+event.getChangedType().toString());
+    }*/
 }

@@ -26,10 +26,12 @@ import com.mcmiddleearth.mcme.editor.job.JobManager;
 import com.mcmiddleearth.mcme.editor.job.action.CountAction;
 import com.mcmiddleearth.mcme.editor.job.action.ReplaceAction;
 import com.mcmiddleearth.mcme.editor.listener.BlockSelectionListener;
+import com.mcmiddleearth.mcme.editor.queue.QueueConfiguration;
 import com.mcmiddleearth.pluginutil.message.MessageUtil;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +39,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 
@@ -72,6 +76,7 @@ public class EditorPlugin extends JavaPlugin {
         dispatcher.register(new QueueCommand().getCommandTree());
         getServer().getPluginManager().registerEvents(new BlockSelectionListener(), this);
         Permissions.register();
+        QueueConfiguration.loadConfig();
         JobManager.loadJobs();
         JobManager.startJobScheduler();
     }
@@ -104,6 +109,18 @@ public class EditorPlugin extends JavaPlugin {
         return true;
     }
     
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        EditCommandSender editSender = EditCommandSender.wrap(sender);
+        try {
+            CompletableFuture<Suggestions> completionSuggestions = dispatcher.getCompletionSuggestions(dispatcher.parse(getInput(command, args), editSender));
+            return completionSuggestions.get().getList().stream().map(Suggestion::getText).collect(Collectors.toList());
+        } catch (InterruptedException | ExecutionException e) {
+            //e.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+    /*
     @Override
     public List<String> onTabComplete​(CommandSender sender, Command command, 
                                  String alias, String[] args) {
@@ -146,7 +163,7 @@ public class EditorPlugin extends JavaPlugin {
                                     .startsWith(partial))
                     .forEach(child -> suggestions.add(child.getName()));
         return suggestions;*/
-    }
+    //}
     
     @Override
     public void onDisable() {

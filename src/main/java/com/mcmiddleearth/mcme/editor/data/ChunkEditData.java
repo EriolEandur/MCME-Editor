@@ -19,6 +19,7 @@ package com.mcmiddleearth.mcme.editor.data;
 import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
 import com.mcmiddleearth.architect.specialBlockHandling.specialBlocks.SpecialBlockItemBlock;
 import com.mcmiddleearth.mcme.editor.EditorPlugin;
+import com.mcmiddleearth.mcme.editor.util.Profiler;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -87,12 +88,14 @@ public class ChunkEditData {
 
     public void applyEdits(World world) {
 //Logger.getGlobal().info("apply edits, size: "+changes.size());
+        Profiler.start("gC");
         Chunk chunk = world.getChunkAt(chunkX, chunkZ);
-        if(Math.random()<0.01)
-        {
-            Logger.getLogger(EditorPlugin.class.getName()).log(Level.INFO,"Working at: "+chunkX+" "+chunkZ
-                    +" ChunkTickets: "+world.getPluginChunkTickets().get(EditorPlugin.getInstance()).size());
-        }
+        Profiler.stop("gC");
+/*if(Math.random()<0.01)
+{
+    Logger.getLogger(EditorPlugin.class.getName()).log(Level.INFO,"Working at: "+chunkX+" "+chunkZ
+            +" ChunkTickets: "+world.getPluginChunkTickets().get(EditorPlugin.getInstance()).size());
+}*/
         removals.forEach((vector,data) -> {
             ArmorStand armorStand = SpecialBlockItemBlock.getArmorStand(new Location(chunk.getWorld(),
                                                                             chunkX*16+vector.getBlockX(),
@@ -106,7 +109,7 @@ public class ChunkEditData {
             chunk.getBlock(vector.getBlockX(),
                            vector.getBlockY(),
                            vector.getBlockZ())
-                    .setType(Material.AIR);
+                    .setType(Material.AIR,false);
         });
         new BukkitRunnable() {
             @Override
@@ -145,7 +148,7 @@ Logger.getGlobal().info("Force load: "+chunkX + " "+chunkZ);
                                vector.getBlockZ());
             if(data instanceof ItemBlockData) {
                 ItemBlockData itemBlockData = (ItemBlockData) data;
-                block.setBlockData(itemBlockData.getBlockData());
+                block.setBlockData(itemBlockData.getBlockData(),false);
                 itemBlockData.getSpecialItemBlock().placeArmorStand(block, BlockFace.DOWN, 
                                                      new Location(null,0,0,0,itemBlockData.getYaw()+180,0),
                                                      itemBlockData.getCurrentDamage());

@@ -19,7 +19,7 @@ package com.mcmiddleearth.mcme.editor.job;
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.job.action.CountAction;
 import com.sk89q.worldedit.regions.Region;
-import java.util.Set;
+import java.util.List;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -33,11 +33,11 @@ public class CountJob extends BlockSearchJob {
     public CountJob(EditCommandSender owner, int id, YamlConfiguration config) {
         super(owner, id, config);
         //actions.putAll(config.getObject("counts", HashMap.class));
-        loadResultsFromFile();
+        //loadResultsFromFile();
         
     }
     
-    public CountJob(EditCommandSender owner, int id, World world, Region extraRegion, Set<Region> regions, 
+    public CountJob(EditCommandSender owner, int id, World world, Region extraRegion, List<Region> regions, 
                     boolean exactMatch, int size) {
         super(owner, id, world, extraRegion, regions, exactMatch, size, owner.hasItemBlocksSelected(EditCommandSender.BlockSelectionMode.COUNT));
         int actionId = 0;

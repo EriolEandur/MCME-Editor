@@ -20,7 +20,7 @@ import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
 import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import com.sk89q.worldedit.regions.Region;
-import java.util.Set;
+import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
@@ -40,7 +40,7 @@ public class SurvivalPrepJob extends BlockSearchJob {
         loadResultsFromFile();
     }
 
-    public SurvivalPrepJob(EditCommandSender owner, int id, World world, Region extraRegion, Set<Region> regions, 
+    public SurvivalPrepJob(EditCommandSender owner, int id, World world, Region extraRegion, List<Region> regions, 
                       boolean exactMatch, int size) {
         super(owner, id, world, extraRegion, regions, exactMatch, size, false);
         saveActionsToFile();

@@ -24,6 +24,7 @@ import java.util.Map;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.util.Vector;
 
 /**
  *
@@ -65,7 +66,7 @@ public class ReplaceAction extends CountAction {
     }
  
     @Override
-    public BlockData apply(BlockData found) {
+    public BlockData apply(BlockData found, Vector loc) {
         applicationCount++;
         if(!flex) {
             return replaceData;
