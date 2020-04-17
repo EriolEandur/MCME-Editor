@@ -51,7 +51,7 @@ public class QueueCommand extends AbstractEditorCommand {
     @Override
     public LiteralArgumentBuilder<EditCommandSender> getCommandTree() {
         return LiteralArgumentBuilder.<EditCommandSender>literal("queue")
-            .requires(s -> s.hasPermissions(Permissions.BLOCK_QUEUE))
+            .requires(s -> s.hasPermissions(Permissions.QUEUE))
             .executes(c -> {
                 (c.getSource()).info("See manual at...");
                 return 0;})
@@ -98,39 +98,43 @@ public class QueueCommand extends AbstractEditorCommand {
                             return 0;
                         }))))
             .then(LiteralArgumentBuilder.<EditCommandSender>literal("updates")
-                .requires(s -> s.hasPermissions(Permissions.QUEUE_CONFIG))
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_UPDATES))
                 .then(RequiredArgumentBuilder.<EditCommandSender,String>argument("enabled",new StringArgument("on","off"))
                     .executes(c -> {
                         return setUpdates(c.getSource(),c.getArgument("enabled", String.class));
                     })))
             .then(LiteralArgumentBuilder.<EditCommandSender>literal("suspend")
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_SUSPEND))
                 .executes(c -> {return suspendJob(c,false);})
                 .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<jobID>", integer())
                     .executes(c -> {return suspendJob(c,false);}))
                 .then(LiteralArgumentBuilder.<EditCommandSender>literal("-a")
-                    .requires(s -> s.hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
+                    .requires(s -> s.hasPermissions(Permissions.QUEUE_OTHER))
                     .executes(c -> {return suspendJob(c,true);})))
             .then(LiteralArgumentBuilder.<EditCommandSender>literal("resume")
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_RESUME))
                 .executes(c -> {return resumeJob(c,false);})
                 .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<jobID>", integer())
                     .executes(c -> {return resumeJob(c,false);}))
                 .then(LiteralArgumentBuilder.<EditCommandSender>literal("-a")
-                    .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
+                    .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.QUEUE_OTHER))
                     .executes(c -> {return resumeJob(c,true);})))
             .then(LiteralArgumentBuilder.<EditCommandSender>literal("cancel")
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_CANCEL))
                 .executes(c -> {return cancelJob(c,false);})
                 .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<jobID>", integer())
                     .executes(c -> {return cancelJob(c,false);}))
                 .then(LiteralArgumentBuilder.<EditCommandSender>literal("-a")
-                    .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
+                    .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.QUEUE_OTHER))
                     .executes(c -> {return cancelJob(c,true);
                 })))
             .then(LiteralArgumentBuilder.<EditCommandSender>literal("delete")
+                .requires(s -> s.hasPermissions(Permissions.QUEUE_DELETE))
                 .executes(c -> {return deleteJob(c,false);})
                 .then(RequiredArgumentBuilder.<EditCommandSender,Integer>argument("<jobID>", integer())
                     .executes(c -> {return deleteJob(c,false);}))
                 .then(LiteralArgumentBuilder.<EditCommandSender>literal("-a")
-                    .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.BLOCK_QUEUE_OTHER))
+                    .requires(s -> ((EditCommandSender)s).hasPermissions(Permissions.QUEUE_OTHER))
                     .executes(c -> {return deleteJob(c,true);
                 })));
     }
@@ -145,7 +149,7 @@ public class QueueCommand extends AbstractEditorCommand {
             if(!selectedStates.contains(job.getStatus())) {
                 continue;
             }
-            if(sender.hasPermissions(Permissions.BLOCK_QUEUE_OTHER)
+            if(sender.hasPermissions(Permissions.QUEUE_OTHER)
                     || job.isOwner(sender)) {
                 String ownerName = (job.getOwner() instanceof EditPlayer?
                                         ((EditPlayer)job.getOwner()).getOfflinePlayer().getName():
@@ -238,7 +242,7 @@ public class QueueCommand extends AbstractEditorCommand {
                 sender.info("Your jobs have been suspended.");
             }
         } else {
-            if(sender.hasPermissions(Permissions.BLOCK_QUEUE_OTHER) 
+            if(sender.hasPermissions(Permissions.QUEUE_OTHER) 
                     || JobManager.getJob(jobId).getOwner().equals(sender)) {
                 if(JobManager.getJob(jobId).isRunnable()) {
                     JobManager.suspendJob(sender, jobId);
@@ -263,7 +267,7 @@ public class QueueCommand extends AbstractEditorCommand {
                 sender.info("Your jobs have been resumed.");
             }
         } else {
-            if(sender.hasPermissions(Permissions.BLOCK_QUEUE_OTHER) 
+            if(sender.hasPermissions(Permissions.QUEUE_OTHER) 
                     || JobManager.getJob(jobId).getOwner().equals(sender)) {
                 if(JobManager.getJob(jobId).isRunnable()) {
                     JobManager.resumeJob(sender, jobId);
@@ -288,7 +292,7 @@ public class QueueCommand extends AbstractEditorCommand {
                 sender.info("Your jobs have been cancelled.");
             }
         } else {
-            if(sender.hasPermissions(Permissions.BLOCK_QUEUE_OTHER) 
+            if(sender.hasPermissions(Permissions.QUEUE_OTHER) 
                     || JobManager.getJob(jobId).getOwner().equals(sender)) {
                 if(JobManager.getJob(jobId).isRunnable()) {
                     JobManager.cancelJob(sender, jobId);
@@ -313,7 +317,7 @@ public class QueueCommand extends AbstractEditorCommand {
                 sender.info("Your deletable jobs have been deleted.");
             }
         } else {
-            if(sender.hasPermissions(Permissions.BLOCK_QUEUE_OTHER) 
+            if(sender.hasPermissions(Permissions.QUEUE_OTHER) 
                     || JobManager.getJob(jobId).getOwner().equals(sender)) {
                 if(JobManager.getJob(jobId).isDequeueable()) {
                     JobManager.dequeueJob(jobId);

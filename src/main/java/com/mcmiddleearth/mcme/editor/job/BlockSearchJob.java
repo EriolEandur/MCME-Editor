@@ -202,7 +202,7 @@ public abstract class BlockSearchJob extends AbstractJob{
             for(int j=0; j<16; j++) {
 //Logger.getGlobal().info("maxY: "+getMaxY());
                 for(int k=getMinY(); k<=Math.min(chunk.getHighestBlockYAt(i, j),getMaxY());k++) {
-//Logger.getGlobal().info("inside: "+isInside(chunk.getX(),chunk.getZ(),i,k,j));
+//Logger.getGlobal().info("inside: "+isInside(chunk.getX(),chunk.getZ(),i,k,j)+" "+complete);
                     if(complete || isInside(chunk.getX(),chunk.getZ(),i,k,j)) {
 //Logger.getGlobal().info("checking: "+i+" "+k+" "+j);
                         BlockData data = chunk.getBlockData(i, k, j);
@@ -212,15 +212,15 @@ public abstract class BlockSearchJob extends AbstractJob{
                             action = actions.get(data);
                         } else {
                             for(Entry<BlockData,CountAction> search: actions.entrySet()) {
-//Logger.getGlobal().info("search: "+search.getKey().toString());
+//Logger.getGlobal().info("search for key: "+search.getKey().toString());
                                 if(search.getKey() instanceof ItemBlockData) {
 //Logger.getGlobal().info("search for itemBlock! "+((ItemBlockData)search.getKey()).getBlockData().getAsString(false));
 //Logger.getGlobal().info("data! "+data.getAsString(false));
                                     if(search.getKey().matches(data)) {
 //Logger.getGlobal().info("first match! ");
                                         ItemBlockData itemBlock = editChunk.getItemBlockData(new Vector(i,k,j));
-//Logger.getGlobal().info("search: "+((ItemBlockData)search.getKey()).getAsString());
-//Logger.getGlobal().info("found : "+itemBlock.getAsString());
+//Logger.getGlobal().info("search data: "+((ItemBlockData)search.getKey()).getAsString());
+//Logger.getGlobal().info("found data: "+itemBlock.getAsString());
                                         if(search.getKey().equals(itemBlock)) {
 //Logger.getGlobal().info("match found! ");
                                             action = search.getValue();
