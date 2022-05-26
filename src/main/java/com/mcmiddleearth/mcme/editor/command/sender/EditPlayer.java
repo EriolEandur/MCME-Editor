@@ -19,6 +19,7 @@ package com.mcmiddleearth.mcme.editor.command.sender;
 import com.mcmiddleearth.mcme.editor.EditorPlugin;
 import com.mcmiddleearth.mcme.editor.clipboard.Clipboard;
 import com.mcmiddleearth.mcme.editor.clipboard.UndoData;
+import com.mcmiddleearth.mcme.editor.data.block.EditBlockData;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ public class EditPlayer extends EditCommandSender{
     private final List<UndoData> redoData = new ArrayList<>();
     
     @Getter @Setter
-    private BlockData incompleteBlockSelection = null;
+    private EditBlockData incompleteBlockSelection = null;
     
     @Getter
     private final UUID uuid;

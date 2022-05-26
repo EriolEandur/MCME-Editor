@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.mcmiddleearth.mcme.editor.data.block.EditBlockData;
+import com.mcmiddleearth.mcme.editor.data.block.SimpleBlockData;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -36,7 +39,7 @@ public class CountAction implements ConfigurationSerializable {
     
     private static final int MAX_LOG = 1000;
     @Getter
-    private final BlockData searchData;
+    private final EditBlockData searchData;
     
     @Getter
     private final List<Vector> locations = new ArrayList<>();
@@ -48,12 +51,12 @@ public class CountAction implements ConfigurationSerializable {
     @Getter
     private final int id;
     
-    public CountAction(int id, BlockData search) {
+    public CountAction(int id, EditBlockData search) {
         this.id = id;
         this.searchData = search.clone();
     }
     
-    public BlockData apply(BlockData found, Vector loc) {
+    public EditBlockData apply(BlockData found, Vector loc) {
         if(applicationCount < MAX_LOG) {
             locations.add(loc);
         }
@@ -71,11 +74,11 @@ public class CountAction implements ConfigurationSerializable {
     
     public static CountAction deserialize(Map<String,Object> map) {
         String dataString = (String)map.get("search");
-        BlockData data;
+        EditBlockData data;
         if(dataString.startsWith(ItemBlockData.NAMESPACE)) {
-            data = ItemBlockData.createItemBlockData(dataString);
+            data = new SimpleBlockData(ItemBlockData.createItemBlockData(dataString));
         } else {
-            data = Bukkit.createBlockData(dataString);
+            data = SimpleBlockData.createBlockData(dataString);
         }
         return new CountAction((int)map.get("id"),data);
     }

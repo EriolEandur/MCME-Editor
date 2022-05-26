@@ -61,8 +61,7 @@ public class JobManager {
 
     
     public static synchronized boolean enqueueBlockJob(EditCommandSender owner, boolean weSelection, Set<String> worlds, 
-                                          Set<String> rps, JobType type, boolean exactMatch) {
-        boolean jobStarted = false;
+                                          Set<String> rps, JobType type, boolean exactMatch, boolean refreshChunks) {
         Region weRegion;
         if(weSelection && owner instanceof EditPlayer && owner.isOnline()) {
             /*WorldEditPlugin worldEdit = (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
@@ -76,6 +75,12 @@ public class JobManager {
         } else {
             weRegion = null;
         }
+        return enqueueBlockJob(owner, weRegion, weSelection, worlds, rps, type, exactMatch, refreshChunks);
+    }
+    
+    public static synchronized boolean enqueueBlockJob(EditCommandSender owner, Region weRegion, boolean weSelection, Set<String> worlds, 
+                                          Set<String> rps, JobType type, boolean exactMatch, boolean refreshChunks) {
+        boolean jobStarted = false;
         Set<World> validWorlds = new HashSet<>();
         if(worlds.isEmpty()) {
             validWorlds.addAll(Bukkit.getWorlds());
@@ -147,13 +152,18 @@ public class JobManager {
                 switch(type) {
                     case COUNT:
                         job = new CountJob(owner, nextId, world, extraWeRegion, rpWeRegions, 
-                                           exactMatch,chunks.size()); break;
+                                           exactMatch,chunks.size(),refreshChunks); break;
                     case REPLACE:
                         job = new ReplaceJob(owner, nextId, world, extraWeRegion, rpWeRegions, 
-                                             exactMatch,chunks.size()); break;
+                                             exactMatch,chunks.size(),refreshChunks); break;
+                    case LIGHT:
+                        job = new LightJob(owner, nextId, world, extraWeRegion, rpWeRegions,
+                                             chunks.size(),refreshChunks); break;
                     case SURVIVAL_PREP:
                         job = new SurvivalPrepJob(owner, nextId, world, extraWeRegion, rpWeRegions, 
                                              exactMatch,chunks.size()); break;
+                    case Y_SHIFT:
+                        job = new YShiftJob(owner, nextId, world, extraWeRegion, rpWeRegions, chunks.size());
                 }
                 nextId++;
                 jobQueue.add(job);

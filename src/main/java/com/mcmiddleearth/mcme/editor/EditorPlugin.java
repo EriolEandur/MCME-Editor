@@ -16,16 +16,14 @@
  */
 package com.mcmiddleearth.mcme.editor;
 
-import com.mcmiddleearth.mcme.editor.command.BlockCommand;
-import com.mcmiddleearth.mcme.editor.command.CountCommand;
-import com.mcmiddleearth.mcme.editor.command.QueueCommand;
-import com.mcmiddleearth.mcme.editor.command.ReplaceCommand;
+import com.mcmiddleearth.mcme.editor.command.*;
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.command.sender.EditConsoleSender;
 import com.mcmiddleearth.mcme.editor.job.JobManager;
 import com.mcmiddleearth.mcme.editor.job.action.CountAction;
 import com.mcmiddleearth.mcme.editor.job.action.ReplaceAction;
 import com.mcmiddleearth.mcme.editor.listener.BlockSelectionListener;
+import com.mcmiddleearth.mcme.editor.listener.LightBrush;
 import com.mcmiddleearth.mcme.editor.queue.QueueConfiguration;
 import com.mcmiddleearth.pluginutil.message.MessageUtil;
 import com.mojang.brigadier.CommandDispatcher;
@@ -44,7 +42,6 @@ import lombok.Getter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 
@@ -74,7 +71,10 @@ public class EditorPlugin extends JavaPlugin {
         dispatcher.register(new CountCommand().getCommandTree());
         dispatcher.register(new ReplaceCommand().getCommandTree());
         dispatcher.register(new QueueCommand().getCommandTree());
+        dispatcher.register(new LightCommand().getCommandTree());
+        dispatcher.register(new YShiftCommand().getCommandTree());
         getServer().getPluginManager().registerEvents(new BlockSelectionListener(), this);
+        getServer().getPluginManager().registerEvents(new LightBrush(), this);
         Permissions.register();
         QueueConfiguration.loadConfig();
         JobManager.loadJobs();
@@ -82,7 +82,7 @@ public class EditorPlugin extends JavaPlugin {
     }
     
     @Override
-    public boolean onCommand​(CommandSender sender, Command command,
+    public boolean onCommand(CommandSender sender, Command command,
                              String alias, String[] args) {
         String input = getInput(command,args);
         ParseResults<EditCommandSender> parseResult = dispatcher.parse(input, EditCommandSender.wrap(sender));

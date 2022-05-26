@@ -16,7 +16,7 @@
  */
 package com.mcmiddleearth.mcme.editor.queue;
 
-import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
+import com.mcmiddleearth.mcme.editor.data.chunk.ChunkEditData;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +53,7 @@ public class WritingQueue {
         return null;
     }
     
-    private ChunkEditData peek() {
+    public ChunkEditData peek() {
         return queue.element();
     }
     

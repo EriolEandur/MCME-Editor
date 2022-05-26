@@ -18,15 +18,17 @@ package com.mcmiddleearth.mcme.editor.data;
 
 import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
 import com.mcmiddleearth.architect.specialBlockHandling.data.SpecialBlockInventoryData;
+import com.mcmiddleearth.architect.specialBlockHandling.specialBlocks.SpecialBlock;
 import com.mcmiddleearth.architect.specialBlockHandling.specialBlocks.SpecialBlockItemBlock;
+import com.mcmiddleearth.mcme.editor.EditorPlugin;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
@@ -53,9 +55,16 @@ public class EditChunkSnapshot {
                     //int[] coords = SpecialBlockItemBlock.getCoordinatesFromArmorStand((ArmorStand)entity); Doesn't work for WE copies.
                     Location armorLoc = entity.getLocation();
 //Logger.getGlobal().info("Armor stand found: "+armorLoc.getX()+" "+armorLoc.getY()+" "+armorLoc.getZ());
-                    SpecialBlockItemBlock specialBlock = (SpecialBlockItemBlock) SpecialBlockInventoryData
+                    SpecialBlock tempSpecialBlock = SpecialBlockInventoryData
                                                                  .getSpecialBlock(SpecialBlockItemBlock
                                                                                   .getIdFromArmorStand((ArmorStand)entity));
+                    SpecialBlockItemBlock specialBlock = null;
+                    if (tempSpecialBlock instanceof SpecialBlockItemBlock) {
+                        specialBlock = (SpecialBlockItemBlock) tempSpecialBlock;
+                    } else {
+                        Logger.getLogger(EditorPlugin.class.getName()).log(Level.WARNING, "Excpected item block could not be identified: "
+                                + SpecialBlockItemBlock.getIdFromArmorStand((ArmorStand)entity)+" -> skipped.");
+                    }
                     if(specialBlock!=null) {
 //Logger.getGlobal().info("specialBlock: "+specialBlock);
                         Block block = specialBlock.getBlock(armorLoc);

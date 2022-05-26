@@ -17,7 +17,10 @@
 package com.mcmiddleearth.mcme.editor.job;
 
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
-import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
+import com.mcmiddleearth.mcme.editor.data.block.EditBlockData;
+import com.mcmiddleearth.mcme.editor.data.block.SimpleBlockData;
+import com.mcmiddleearth.mcme.editor.data.chunk.ChunkBlockEditData;
+import com.mcmiddleearth.mcme.editor.data.chunk.ChunkEditData;
 import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import com.sk89q.worldedit.regions.Region;
 import java.util.List;
@@ -42,7 +45,7 @@ public class SurvivalPrepJob extends BlockSearchJob {
 
     public SurvivalPrepJob(EditCommandSender owner, int id, World world, Region extraRegion, List<Region> regions, 
                       boolean exactMatch, int size) {
-        super(owner, id, world, extraRegion, regions, exactMatch, size, false);
+        super(owner, id, world, extraRegion, regions, exactMatch, size, false, false);
         saveActionsToFile();
     }
     
@@ -63,7 +66,7 @@ public class SurvivalPrepJob extends BlockSearchJob {
             complete = true;
         }
 //Logger.getGlobal().info("complete: "+complete);
-        ChunkEditData edit = new ChunkEditData(chunk.getX(),chunk.getZ());
+        ChunkBlockEditData edit = new ChunkBlockEditData(chunk.getX(),chunk.getZ());
 //Logger.getGlobal().info("maxY: "+getMaxY());
         for(int i=0; i<16; i++) {
             for(int j=0; j<16; j++) {
@@ -73,7 +76,7 @@ public class SurvivalPrepJob extends BlockSearchJob {
                     if(complete || isInside(chunk.getX(),chunk.getZ(),i,k,j)) {
                         if(isSand(chunk, edit, i,k,j) 
                                 && !isWaterOrAirAround(chunk, edit, i,k,j)) {
-                            edit.add(new Vector(i,k,j),Bukkit.createBlockData(Material.STONE));
+                            edit.add(new Vector(i,k,j),new SimpleBlockData(Bukkit.createBlockData(Material.STONE)));
                         }
                     }
                 }
@@ -113,44 +116,44 @@ public class SurvivalPrepJob extends BlockSearchJob {
         return edit;
     }
     
-    private void placeVein(ChunkSnapshot chunk, Material mat, int x, int y, int z, int size, ChunkEditData edit) {
+    private void placeVein(ChunkSnapshot chunk, Material mat, int x, int y, int z, int size, ChunkBlockEditData edit) {
         Vector vec = new Vector(Math.random()*2-1,Math.random()*2-1,Math.random()*2-1);
         int step = 0;
         int counter = 0;
         while(counter<size) {
             if(isMaterial(chunk,edit,x,y,z,Material.STONE)) {
-                if(edit.add(new Vector(x,y,z),Bukkit.createBlockData(mat))) {
+                if(edit.add(new Vector(x,y,z),new SimpleBlockData(Bukkit.createBlockData(mat)))) {
                     counter++;
                 }
             }
             if(step>0 && Math.random()>0.5 && isMaterial(chunk,edit,x-1,y,z,Material.STONE)) {
-                if(edit.add(new Vector(x-1,y,z),Bukkit.createBlockData(mat))) {
+                if(edit.add(new Vector(x-1,y,z),new SimpleBlockData(Bukkit.createBlockData(mat)))) {
                     counter++;
                 }
             }
             if(step>0 && Math.random()>0.5 && isMaterial(chunk,edit,x,y,z-1,Material.STONE)) {
-                if(edit.add(new Vector(x,y,z-1),Bukkit.createBlockData(mat))) {
+                if(edit.add(new Vector(x,y,z-1),new SimpleBlockData(Bukkit.createBlockData(mat)))) {
                     counter++;
                 }
             }
             if(step>0 && Math.random()>0.5 && isMaterial(chunk,edit,x-1,y,z-1,Material.STONE)) {
-                if(edit.add(new Vector(x-1,y,z-1),Bukkit.createBlockData(mat))) {
+                if(edit.add(new Vector(x-1,y,z-1),new SimpleBlockData(Bukkit.createBlockData(mat)))) {
                     counter++;
                 }
             }
             if(counter<size-3) {
                 if(step>0 && Math.random()>0.5 && isMaterial(chunk,edit,x-1,y-1,z,Material.STONE)) {
-                    if(edit.add(new Vector(x-1,y-1,z),Bukkit.createBlockData(mat))) {
+                    if(edit.add(new Vector(x-1,y-1,z),new SimpleBlockData(Bukkit.createBlockData(mat)))) {
                         counter++;
                     }
                 }
                 if(step>0 && Math.random()>0.5 && isMaterial(chunk,edit,x,y-1,z-1,Material.STONE)) {
-                    if(edit.add(new Vector(x,y-1,z-1),Bukkit.createBlockData(mat))) {
+                    if(edit.add(new Vector(x,y-1,z-1),new SimpleBlockData(Bukkit.createBlockData(mat)))) {
                         counter++;
                     }
                 }
                 if(step>0 && Math.random()>0.5 && isMaterial(chunk,edit,x-1,y-1,z-1,Material.STONE)) {
-                    if(edit.add(new Vector(x-1,y-1,z-1),Bukkit.createBlockData(mat))) {
+                    if(edit.add(new Vector(x-1,y-1,z-1),new SimpleBlockData(Bukkit.createBlockData(mat)))) {
                         counter++;
                     }
                 }
@@ -163,17 +166,17 @@ public class SurvivalPrepJob extends BlockSearchJob {
         }
     }
     
-    private boolean isMaterial(ChunkSnapshot chunk, ChunkEditData edit, int x, int y, int z, Material mat) {
+    private boolean isMaterial(ChunkSnapshot chunk, ChunkBlockEditData edit, int x, int y, int z, Material mat) {
         if(x<0 || x > 15 || y < 0 || y > 255 || z < 0 || z > 15) return false;
-        BlockData editData = edit.get(new Vector(x,y,z));
+        EditBlockData editData = edit.get(new Vector(x,y,z));
         if(editData!=null) {
-            return editData.getMaterial().equals(mat);
+            return editData.getBlockData().getMaterial().equals(mat);
         } else {
             return chunk.getBlockType(x, y, z).equals(mat);
         }
     }
     
-    private boolean isTerrain(ChunkSnapshot chunk, ChunkEditData edit, int i, int k, int j) {
+    private boolean isTerrain(ChunkSnapshot chunk, ChunkBlockEditData edit, int i, int k, int j) {
         return isMaterial(chunk,edit,i,k,j,Material.STONE)
             || isMaterial(chunk,edit,i,k,j,Material.DIORITE)
             || isMaterial(chunk,edit,i,k,j,Material.ANDESITE)
@@ -184,18 +187,18 @@ public class SurvivalPrepJob extends BlockSearchJob {
             || isMaterial(chunk,edit,i,k,j,Material.COARSE_DIRT);
     }
     
-    private boolean isSand(ChunkSnapshot chunk, ChunkEditData edit, int i, int k, int j) {
+    private boolean isSand(ChunkSnapshot chunk, ChunkBlockEditData edit, int i, int k, int j) {
         return isMaterial(chunk,edit,i,k,j,Material.SAND);
     }
     
-    private boolean isWaterOrAir(ChunkSnapshot chunk, ChunkEditData edit, int i, int k, int j) {
+    private boolean isWaterOrAir(ChunkSnapshot chunk, ChunkBlockEditData edit, int i, int k, int j) {
         return isMaterial(chunk,edit,i,k,j,Material.WATER)
             || isMaterial(chunk,edit,i,k,j,Material.AIR)
             || isMaterial(chunk,edit,i,k,j,Material.CAVE_AIR)
             || isMaterial(chunk,edit,i,k,j,Material.VOID_AIR);
     }
     
-    private boolean isWaterOrAirAround(ChunkSnapshot chunk, ChunkEditData edit, int x, int y, int z) {
+    private boolean isWaterOrAirAround(ChunkSnapshot chunk, ChunkBlockEditData edit, int x, int y, int z) {
         for(int i = x-1; i<=x+1; i++) {
             for(int j = z-1; j<=z+1; j++) {
                 for(int k = y-1; k<=y+1; k++) {

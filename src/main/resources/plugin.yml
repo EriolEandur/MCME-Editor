@@ -3,7 +3,7 @@ main: com.mcmiddleearth.mcme.editor.EditorPlugin
 version: ${project.version}
 author: Eriol_Eandur
 depend: [MCME-Architect]
-api-version: 1.13
+api-version: 1.18
 
 commands:
    block:
@@ -18,7 +18,15 @@ commands:
       description: count selected (replace and switch) blocks
       usage: /replace [-p | -m]    
       aliases: rpl
+   fixlight:
+      description: recalculates light
+      usage: /fixlight [-p | -m]    
+      aliases: clght
    queue:
       description: manage editor queue
       usage: /queue list|suspend|resume|cancel   
       aliases: que
+   yshift:
+      desciption: yshift job for 1.18 map conversion
+      usage: don't!
+

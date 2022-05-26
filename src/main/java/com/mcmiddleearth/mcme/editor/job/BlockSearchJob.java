@@ -18,19 +18,21 @@ package com.mcmiddleearth.mcme.editor.job;
 
 import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
-import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
 import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
+import com.mcmiddleearth.mcme.editor.data.block.EditBlockData;
+import com.mcmiddleearth.mcme.editor.data.chunk.ChunkBlockEditData;
+import com.mcmiddleearth.mcme.editor.data.chunk.ChunkEditData;
 import com.mcmiddleearth.mcme.editor.job.action.CountAction;
 import com.sk89q.worldedit.regions.Region;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.bukkit.ChatColor;
+import org.bukkit.ChunkSnapshot;
+import org.bukkit.World;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.util.Vector;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,12 +40,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.bukkit.ChatColor;
-import org.bukkit.ChunkSnapshot;
-import org.bukkit.World;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.util.Vector;
 
 /**
  *
@@ -67,13 +63,13 @@ public abstract class BlockSearchJob extends AbstractJob{
         ///extraRegion=null;
         List list = config.getList("actions");
         exactMatch = config.getBoolean("exactMatch",true);
-        list.forEach(action->actions.put(((CountAction)action).getSearchData(), (CountAction)action));
+        list.forEach(action->actions.put(((CountAction)action).getSearchData().getBlockData(), (CountAction)action));
         loadResultsFromFile();
     }
     
     public BlockSearchJob(EditCommandSender owner, int id, World world, Region extraRegion, List<Region> regions, 
-                          boolean exactMatch, int size, boolean includeItemBlocks) {//boolean weSelection, Set<String> worlds, Set<String> rps) {
-        super(owner, id, world, extraRegion, regions, size, includeItemBlocks);
+                          boolean exactMatch, int size, boolean includeItemBlocks, boolean refreshChunks) {//boolean weSelection, Set<String> worlds, Set<String> rps) {
+        super(owner, id, world, extraRegion, regions, size, includeItemBlocks, refreshChunks);
         this.exactMatch = exactMatch;
         saveJobDataToFile();
         createFileObjects();
@@ -197,11 +193,12 @@ public abstract class BlockSearchJob extends AbstractJob{
             complete = true;
         }
 //Logger.getGlobal().info("complete: "+complete);
-        ChunkEditData edit = new ChunkEditData(chunk.getX(),chunk.getZ());
+        ChunkBlockEditData edit = new ChunkBlockEditData(chunk.getX(),chunk.getZ());
         for(int i=0; i<16; i++) {
             for(int j=0; j<16; j++) {
 //Logger.getGlobal().info("maxY: "+getMaxY());
-                for(int k=getMinY(); k<=Math.min(chunk.getHighestBlockYAt(i, j),getMaxY());k++) {
+//Logger.getGlobal().info("maxY at "+i+" "+j+": "+chunk.getHighestBlockYAt(j, j));
+                for(int k=getMinY(); k<=/*Math.min(chunk.getHighestBlockYAt(i, j),*/getMaxY();k++) {
 //Logger.getGlobal().info("inside: "+isInside(chunk.getX(),chunk.getZ(),i,k,j)+" "+complete);
                     if(complete || isInside(chunk.getX(),chunk.getZ(),i,k,j)) {
 //Logger.getGlobal().info("checking: "+i+" "+k+" "+j);
@@ -229,10 +226,10 @@ public abstract class BlockSearchJob extends AbstractJob{
                                     }
                                 } else {
 //Logger.getGlobal().info(" no itemBlock! "+search.getKey().toString());
-    //Logger.getGlobal().info("search: "+search.getValue().toString());
-    //Logger.getGlobal().info("data: "+data.toString());
+//    Logger.getGlobal().info("search: "+search.getValue().getSearchData().getAsString());
+//    Logger.getGlobal().info("data: "+data.getAsString());
                                     if(data.matches(search.getKey())) {
-    //Logger.getGlobal().warning("Match!");
+//    Logger.getGlobal().warning("Match!");
                                         action = search.getValue();
                                         break;
                                     }
@@ -241,7 +238,7 @@ public abstract class BlockSearchJob extends AbstractJob{
                         }
 //Logger.getGlobal().info("action: "+action);
                         if(action!=null) {
-                            BlockData replace = action.apply(data, new Vector(chunk.getX()*16+i,k,chunk.getZ()*16+j));
+                            EditBlockData replace = action.apply(data, new Vector(chunk.getX()*16+i,k,chunk.getZ()*16+j));
 //Logger.getGlobal().info("replace: "+replace);
                             if(replace!=null) {
                                 edit.add(new Vector(i,k,j), replace);

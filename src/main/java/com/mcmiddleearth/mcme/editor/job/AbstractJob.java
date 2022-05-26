@@ -20,7 +20,7 @@ import com.mcmiddleearth.mcme.editor.EditorPlugin;
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.command.sender.EditConsoleSender;
 import com.mcmiddleearth.mcme.editor.command.sender.EditPlayer;
-import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
+import com.mcmiddleearth.mcme.editor.data.chunk.ChunkEditData;
 import com.mcmiddleearth.mcme.editor.data.ChunkPosition;
 import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
@@ -53,6 +53,7 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  *
@@ -68,7 +69,7 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
     @Getter
     private static int maxChunkTickets;
     
-    private ReadingQueue readingQueue;
+    protected ReadingQueue readingQueue;
     protected WritingQueue writingQueue;
     
     @Getter
@@ -133,6 +134,8 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
     @Getter
     private int maxY, minY;
     
+    private boolean refreshChunks;
+    
     public static AbstractJob loadJob(File jobFile) {
         int id = Integer.parseInt(jobFile.getName().substring(0, jobFile.getName().indexOf(jobDataFileExt)));
         YamlConfiguration config = new YamlConfiguration();
@@ -154,8 +157,12 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
                     return new CountJob(owner,id, config);
                 case REPLACE:
                     return new ReplaceJob(owner,id, config);
+                case LIGHT:
+                    return new LightJob(owner,id, config);
                 case SURVIVAL_PREP:
                     return new SurvivalPrepJob(owner,id, config);
+                case Y_SHIFT:
+                    return new YShiftJob(owner,id,config);
                 default:
                     Logger.getLogger(AbstractJob.class.getName()).log(Level.SEVERE, "Invalid job type.");
             }
@@ -172,6 +179,7 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
         includeItemBlocks = config.getBoolean("includeItemBlocks",false);
         startTime = config.getLong("start");
         endTime = config.getLong("end");
+        refreshChunks = config.getBoolean("refreshChunks",false);
         this.owner = owner;
         this.id = id;
         this.world = Bukkit.getWorld(config.getString("world"));
@@ -195,7 +203,8 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
         setYRange();
     }
     
-    public AbstractJob(EditCommandSender owner, int id, World world, Region extraRegion, List<Region> regions, int size, boolean includeItemBlocks) {
+    public AbstractJob(EditCommandSender owner, int id, World world, Region extraRegion, List<Region> regions, int size, 
+                       boolean includeItemBlocks, boolean refreshChunks) {
         status = JobStatus.CREATION;
         statusRequested = status;
         startTime = System.currentTimeMillis();
@@ -207,6 +216,7 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
         //readSizeFromFile();
         this.size = size;
         unrequested = size;
+        this.refreshChunks = refreshChunks;
         createQueues();
         //initJobData(owner);
         config = new YamlConfiguration();
@@ -219,6 +229,7 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
             config.set("includeItemBlocks",includeItemBlocks);
             config.set("start",startTime);
             config.set("end", endTime);
+            config.set("refreshChunks",refreshChunks);
             config.set("world", world.getName());
             config.set("type",getType().name());
             config.set("status", status);
@@ -384,6 +395,7 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
     public abstract ChunkEditData handle(EditChunkSnapshot chunk);
     
     public void work() {
+//Logger.getGlobal().info("work:");
         while(readingQueue.hasChunk()) {
 //Logger.getGlobal().info("handle chunk (current unrequested):" +current+" "+unrequested);
             ChunkEditData data = handle(readingQueue.pollChunk());
@@ -393,6 +405,7 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
     }
 
     public void requestChunks() {
+//Logger.getGlobal().info("request:");
         int remaining = readingQueue.remainingRequestsCapacity();
         List<ChunkPosition> request = new ArrayList<>();
         for(int i = 0; i < remaining && i < unrequested; i++) {
@@ -415,14 +428,14 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
         ChunkEditData edit = writingQueue.poll();
         //if(world.getChunkAt(edit.getChunkX(), edit.getChunkZ()).isLoaded()) {
         try {
-            edit.applyEdits(world);
+            edit.applyEdit(world, refreshChunks);
         } finally {
-            /*new BukkitRunnable() {
+            new BukkitRunnable() {
                 @Override
                 public void run() {
                     world.removePluginChunkTicket(edit.getChunkX(), edit.getChunkZ(), EditorPlugin.getInstance());
                 }
-            }.runTaskLater(EditorPlugin.getInstance(), 6);*/
+            }.runTaskLater(EditorPlugin.getInstance(), 6);
         }
 //Logger.getGlobal().info("Edit Chunk: "+current);
         current++;
@@ -452,7 +465,7 @@ public abstract class AbstractJob implements Comparable<AbstractJob>{
         ChunkPosition chunk = readingQueue.nextRequest();
         //Profiler.stop("request");
         //Profiler.start("ticket");
-        //world.addPluginChunkTicket(chunk.getX(),chunk.getZ(), EditorPlugin.getInstance());
+        world.addPluginChunkTicket(chunk.getX(),chunk.getZ(), EditorPlugin.getInstance());
         //Profiler.stop("ticket");
         Profiler.start("put");
         readingQueue.putChunk(new EditChunkSnapshot(world.getChunkAt(chunk.getX(),chunk.getZ()),includeItemBlocks));

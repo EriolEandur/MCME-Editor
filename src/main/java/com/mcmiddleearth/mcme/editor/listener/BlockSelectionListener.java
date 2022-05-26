@@ -22,6 +22,7 @@ import com.mcmiddleearth.mcme.editor.Permissions;
 import com.mcmiddleearth.mcme.editor.command.BlockCommand;
 import com.mcmiddleearth.mcme.editor.command.sender.EditPlayer;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
+import com.mcmiddleearth.mcme.editor.data.block.SimpleBlockData;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.EventHandler;
@@ -60,19 +61,19 @@ public class BlockSelectionListener implements Listener {
                     }
                     switch(player.getBlockSelectionMode()) {
                         case COUNT:
-                            player.addCount(blockData);
+                            player.addCount(new SimpleBlockData(blockData));
                             BlockCommand.sendSelectedBlocksMessage(player);
                             break;
                         case REPLACE:
                             if(player.getIncompleteBlockSelection()==null) {
-                                player.setIncompleteBlockSelection(blockData);
+                                player.setIncompleteBlockSelection(new SimpleBlockData(blockData));
                                 player.info("Block data to be replaced saved, next click at a block to place instead.");
                             } else {
                                 if((blockData instanceof ItemBlockData) && !player.hasPermissions(Permissions.BLOCK_PLACE_ITEMBLOCK)) {
                                     sendNoItemBlockPermission(player);
                                     break;
                                 }
-                                player.addReplace(player.getIncompleteBlockSelection(), blockData);
+                                player.addReplace(player.getIncompleteBlockSelection(), new SimpleBlockData(blockData));
                                 player.setIncompleteBlockSelection(null);
                                 BlockCommand.sendSelectedBlocksMessage(player);//"Block data selected for replacing (hover for more info).");
                             }
@@ -83,10 +84,10 @@ public class BlockSelectionListener implements Listener {
                                 break;
                             }
                             if(player.getIncompleteBlockSelection()==null) {
-                                player.setIncompleteBlockSelection(blockData);
+                                player.setIncompleteBlockSelection(new SimpleBlockData(blockData));
                                 player.info("Block data to be switched saved, next click at a block to switch with.");
                             } else {
-                                player.addSwitch(player.getIncompleteBlockSelection(),blockData);
+                                player.addSwitch(player.getIncompleteBlockSelection(),new SimpleBlockData(blockData));
                                 player.setIncompleteBlockSelection(null);
                                 BlockCommand.sendSelectedBlocksMessage(player);
                             }

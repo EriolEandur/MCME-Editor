@@ -23,7 +23,6 @@ import com.mcmiddleearth.mcme.editor.job.JobStatus;
 import com.mcmiddleearth.mcme.editor.util.Profiler;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.logging.Logger;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.scheduler.BukkitRunnable;

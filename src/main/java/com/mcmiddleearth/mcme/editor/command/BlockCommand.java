@@ -16,29 +16,30 @@
  */
 package com.mcmiddleearth.mcme.editor.command;
 
-import com.mcmiddleearth.architect.blockData.BlockDataManager;
 import com.mcmiddleearth.mcme.editor.EditorPlugin;
 import com.mcmiddleearth.mcme.editor.Permissions;
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
 import com.mcmiddleearth.mcme.editor.command.sender.EditPlayer;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
+import com.mcmiddleearth.mcme.editor.data.block.EditBlockData;
+import com.mcmiddleearth.mcme.editor.data.block.SimpleBlockData;
 import com.mcmiddleearth.pluginutil.NumericUtil;
 import com.mcmiddleearth.pluginutil.StringUtil;
 import com.mcmiddleearth.pluginutil.message.FancyMessage;
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
-import static com.mojang.brigadier.arguments.StringArgumentType.word;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import org.bukkit.entity.Player;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import org.bukkit.Bukkit;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.Player;
+
+import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
+import static com.mojang.brigadier.arguments.StringArgumentType.word;
+import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 
 /**
  * Manage block rules for jobs. Subcommands: switch, replace, count
@@ -159,13 +160,13 @@ Logger.getGlobal().info("builder start: "+builder.getStart());*/
         sendSelectedBlocksMessage(p);
     }
     
-    private List<BlockData> getBlockCountArguments(EditCommandSender p, String args) {
+    private List<EditBlockData> getBlockCountArguments(EditCommandSender p, String args) {
 //Logger.getGlobal().info("end: "+args);//c.getRange().getEnd());
         String[] argArray = args.trim().split(" ");
-        List<BlockData> list = new ArrayList<>();
+        List<EditBlockData> list = new ArrayList<>();
         for(String argument: argArray) {
             try {
-                BlockData blockData = parseBlockData(argument);
+                EditBlockData blockData = parseBlockData(argument);
                 list.add(blockData);
             }catch(IllegalArgumentException ex) {
                 p.error("Block data must have format id:dv or material[attribute1=value1,attribute2=value2]");
@@ -194,10 +195,10 @@ Logger.getGlobal().info("Found argument: "+id+":"+dv);
         return null;*/
     }
     
-    private List<BlockData[]> getBlockReplaceArguments(EditCommandSender p, String args, String delimiter) {
+    private List<EditBlockData[]> getBlockReplaceArguments(EditCommandSender p, String args, String delimiter) {
 //Logger.getGlobal().info("end: "+args);//c.getRange().getEnd());
         String[] argArray = args.trim().split(" ");
-        List<BlockData[]> list = new ArrayList<>();
+        List<EditBlockData[]> list = new ArrayList<>();
         for(String argument: argArray) {
             try {
                 String[] argumentArray = argument.split(delimiter);
@@ -205,9 +206,9 @@ Logger.getGlobal().info("Found argument: "+id+":"+dv);
                     p.error("You need to specify two sets of block data separated by '"+delimiter+"'");
                     continue;
                 }
-                BlockData blockDataReplace = parseBlockData(argumentArray[0]);
-                BlockData blockDataPlace = parseBlockData(argumentArray[1]);
-                list.add(new BlockData[]{blockDataReplace, blockDataPlace});
+                EditBlockData blockDataReplace = parseBlockData(argumentArray[0]);
+                EditBlockData blockDataPlace = parseBlockData(argumentArray[1]);
+                list.add(new EditBlockData[]{blockDataReplace, blockDataPlace});
             }catch(IllegalArgumentException ex) {
                 p.error("Block data must have format id:dv or material[attribute1=value1,attribute2=value2]");
             }
@@ -215,7 +216,7 @@ Logger.getGlobal().info("Found argument: "+id+":"+dv);
         return list;
    }
 
-    private BlockData parseBlockData(String argument) throws IllegalArgumentException {
+    private EditBlockData parseBlockData(String argument) throws IllegalArgumentException {
         String[] data = argument.split(":");
         int id;
         int dv = 0;
@@ -225,13 +226,14 @@ Logger.getGlobal().info("Found argument: "+id+":"+dv);
                 dv = NumericUtil.getInt(data[1]);
             }
 //Logger.getGlobal().info("Found argument: "+id+":"+dv);
-            return BlockDataManager.getBlockData(id,(byte)dv);
+            throw new UnsupportedOperationException("Block definitions by ID and DV are no longer supported.");
+            //return new SimpleBlockData(BlockDataManager.getBlockData(id,(byte)dv));
         } else {
             if(!argument.startsWith("minecraft:")) {
                 argument = "minecraft:"+argument;
             }
 //Logger.getGlobal().info("Found argument: "+argument);
-            BlockData blockData = Bukkit.createBlockData(argument);
+            EditBlockData blockData = SimpleBlockData.createBlockData(argument);
             return blockData;
         }
     }

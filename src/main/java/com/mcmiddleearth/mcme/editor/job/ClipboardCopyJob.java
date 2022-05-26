@@ -17,7 +17,7 @@
 package com.mcmiddleearth.mcme.editor.job;
 
 import com.mcmiddleearth.mcme.editor.command.sender.EditCommandSender;
-import com.mcmiddleearth.mcme.editor.data.ChunkEditData;
+import com.mcmiddleearth.mcme.editor.data.chunk.ChunkEditData;
 import com.mcmiddleearth.mcme.editor.data.EditChunkSnapshot;
 import org.bukkit.configuration.file.YamlConfiguration;
 

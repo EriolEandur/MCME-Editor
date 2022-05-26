@@ -20,29 +20,21 @@ import com.mcmiddleearth.architect.specialBlockHandling.data.ItemBlockData;
 import com.mcmiddleearth.mcme.editor.EditorPlugin;
 import com.mcmiddleearth.mcme.editor.Permissions;
 import com.mcmiddleearth.mcme.editor.data.PluginData;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.mcmiddleearth.mcme.editor.data.block.BlockShiftData;
+import com.mcmiddleearth.mcme.editor.data.block.EditBlockData;
+import com.mcmiddleearth.mcme.editor.data.block.SimpleBlockData;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
+
+import java.io.*;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -53,11 +45,11 @@ public abstract class EditCommandSender {
     public abstract CommandSender getSender();
     
     @Getter
-    private Map<BlockData,BlockData> replaces = new HashMap<>();
+    private Map<EditBlockData,EditBlockData> replaces = new HashMap<>();
     @Getter
-    private Map<BlockData,BlockData> switches = new HashMap<>();
+    private Map<EditBlockData,EditBlockData> switches = new HashMap<>();
     @Getter
-    private Set<BlockData> counts = new HashSet<>();
+    private Set<EditBlockData> counts = new HashSet<>();
 
     @Getter @Setter
     private BlockSelectionMode blockSelectionMode = BlockSelectionMode.COUNT;
@@ -114,7 +106,7 @@ public abstract class EditCommandSender {
         switch(mode) {
             case COUNT:
                 boolean secondColor = false;
-                for(BlockData data: counts) {
+                for(EditBlockData data: counts) {
                     result.add((secondColor?ChatColor.LIGHT_PURPLE:ChatColor.DARK_PURPLE)
                                +data.getAsString(true));
                     secondColor = !secondColor;
@@ -145,15 +137,15 @@ public abstract class EditCommandSender {
         }
     }
     
-    public void addReplace(BlockData data1, BlockData data2) {
+    public void addReplace(EditBlockData data1, EditBlockData data2) {
         replaces.put(data1, data2);
     }
     
-    public void addSwitch(BlockData data1, BlockData data2) {
+    public void addSwitch(EditBlockData data1, EditBlockData data2) {
         switches.put(data1, data2);
     }
     
-    public void addCount(BlockData data) {
+    public void addCount(EditBlockData data) {
         counts.add(data);
     }
     
@@ -166,7 +158,7 @@ public abstract class EditCommandSender {
                     break;
                 }
                 if(line.startsWith("minecraft:")) {
-                    BlockData data = Bukkit.createBlockData(line);
+                    EditBlockData data = SimpleBlockData.createBlockData(line.trim());
                     counts.add(data);
                 }
             }
@@ -176,12 +168,25 @@ public abstract class EditCommandSender {
                     break;
                 }
                 if(line.startsWith("minecraft:")) {
-                    BlockData data1 = Bukkit.createBlockData(line);
-                    BlockData data2 = Bukkit.createBlockData(reader.nextLine().substring(2));
+                    EditBlockData data1 = SimpleBlockData.createBlockData(line);
+                    line = reader.nextLine().substring(2).trim();
+                    EditBlockData data2;
+                    if(line.startsWith(BlockShiftData.NAMESPACE)) {
+                        data2 = BlockShiftData.createEditBlockData(data1.getBlockData(),line);
+                    } else {
+                        data2 = SimpleBlockData.createBlockData(line);
+                    }
                     replaces.put(data1,data2);
-                } else if(line.startsWith("mcme:")) {
-                    BlockData data1 = ItemBlockData.createItemBlockData(line);
-                    BlockData data2 = Bukkit.createBlockData(reader.nextLine().substring(2));
+                } else if(line.startsWith(ItemBlockData.NAMESPACE)) {
+                    EditBlockData data1 = new SimpleBlockData(ItemBlockData.createItemBlockData(line));
+                    line = reader.nextLine().substring(2).trim();
+                    EditBlockData data2;
+                    if(line.startsWith(ItemBlockData.NAMESPACE)) {
+                        data2 = new SimpleBlockData(ItemBlockData.createItemBlockData(line));
+                    } else {
+                        data2 = SimpleBlockData.createBlockData(line);
+                    }
+Logger.getGlobal().info("data1: "+data1.getBlockData()+" data2: "+data2.getBlockData());
                     replaces.put(data1,data2);
                 }
             }
@@ -191,8 +196,8 @@ public abstract class EditCommandSender {
                     break;
                 }
                 if(line.startsWith("minecraft:")) {
-                    BlockData data1 = Bukkit.createBlockData(line);
-                    BlockData data2 = Bukkit.createBlockData(reader.nextLine().substring(2));
+                    EditBlockData data1 = SimpleBlockData.createBlockData(line);
+                    EditBlockData data2 = SimpleBlockData.createBlockData(reader.nextLine().substring(3).trim());
                     switches.put(data1,data2);
                 }
             }
@@ -234,8 +239,9 @@ public abstract class EditCommandSender {
         return false;
     }
     
-    private boolean checkForItemBlocks(Map<BlockData,BlockData> selections) {
-        return selections.entrySet().stream().anyMatch((entry) -> (entry.getKey() instanceof ItemBlockData || entry.getValue() instanceof ItemBlockData));
+    private boolean checkForItemBlocks(Map<EditBlockData,EditBlockData> selections) {
+        return selections.entrySet().stream().anyMatch((entry) -> (entry.getKey().getBlockData() instanceof ItemBlockData
+                                                                || entry.getValue().getBlockData() instanceof ItemBlockData));
     }
     
     public static enum BlockSelectionMode {

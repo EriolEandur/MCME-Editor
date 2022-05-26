@@ -57,6 +57,7 @@ public abstract class AbstractEditorCommand {
 //Logger.getGlobal().info("startJob: "+type.name());
         boolean weSelection = false;
         boolean exactMatch = true;
+        boolean refreshChunks = true;
         Set<String> worlds = new HashSet<>();
         Set<String> rps = new HashSet<>();
         String filename = null;
@@ -73,6 +74,8 @@ public abstract class AbstractEditorCommand {
                     rps.add(option.substring(3));
                 } else if(option.startsWith("-m:")) {
                     worlds.add(option.substring(3));
+                } else if(option.equals("-norefresh")) {
+                    refreshChunks = false;
                 } else if(option.equals("-survival")) {
                     type = JobType.SURVIVAL_PREP;
                 } else {
@@ -99,12 +102,13 @@ public abstract class AbstractEditorCommand {
         }
         boolean finalWeSelection = weSelection;
         boolean finalExactMatch = exactMatch;
+        boolean finalRefreshChunks = refreshChunks;
         JobType finalType = type;
         new BukkitRunnable() {
             @Override
             public void run() {
                 if(JobManager.enqueueBlockJob((EditCommandSender)c.getSource(),finalWeSelection,worlds,
-                                              rps,finalType,finalExactMatch)) {
+                                              rps,finalType,finalExactMatch,finalRefreshChunks)) {
                     ((EditCommandSender)c.getSource()).info("Job was added to editor queue.");
                 } else {
                     ((EditCommandSender)c.getSource()).error("Enqueue job failed. Your may need to make a valid area selection.");
@@ -129,7 +133,10 @@ public abstract class AbstractEditorCommand {
         /*if(builder.getRemaining().toLowerCase().startsWith("-p:")) {
             Architect
         }*/
-        builder.suggest("-we", new LiteralMessage("Limits the job to your WE selection."))
+        builder.suggest("-match", new LiteralMessage("Tries to match block data instead of working on equal data only."))
+               .suggest("-f:blockSelection", new LiteralMessage("Use block selections from a file instead of your ingame selections."))
+               .suggest("-norefresh", new LiteralMessage("Skips chunk refreshing, useful for large jobs."))
+               .suggest("-we", new LiteralMessage("Limits the job to your WE selection."))
                .suggest("-m:worldname", new LiteralMessage("Limits the job to the given world."))
                .suggest("-p:rpname", new LiteralMessage("Limits the job to areas using the given rp."));
         return builder;
